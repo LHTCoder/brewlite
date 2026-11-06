@@ -18,8 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      IMAGE_API: ghcr.io/${{ github.repository_owner }}/brewlite-api
-      IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/brewlite-web
+      IMAGE_API: ghcr.io/lhtcoder/brewlite-api
+      IMAGE_WEB: ghcr.io/lhtcoder/brewlite-web
     steps:
       - uses: actions/checkout@v4
       - name: Rollback API

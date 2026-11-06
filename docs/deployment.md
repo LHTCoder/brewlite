@@ -16,11 +16,11 @@ Sơ đồ: [deployment-production.svg](./diagrams/deployment-production.svg) · 
 
 1. Tạo tài khoản Render, kết nối GitHub.
 2. **Database:** *New → PostgreSQL* → tên `brewlite-db`, region Singapore, plan Free. Copy **Internal Database URL** (dạng `postgresql://user:pass@host/brewlite`). DB này không có public IP → thỏa yêu cầu "database production không public".
-3. **API:** *New → Web Service → Deploy an existing image* → image `ghcr.io/LHTCoder/brewlite-api:latest` (lần đầu có thể chọn *Build from repo* với Dockerfile `apps/api/Dockerfile`, root `apps/api`). Cấu hình:
+3. **API:** *New → Web Service → Deploy an existing image* → image `ghcr.io/lhtcoder/brewlite-api:latest` (lần đầu có thể chọn *Build from repo* với Dockerfile `apps/api/Dockerfile`, root `apps/api`). Cấu hình:
    - Port `4000`; Health Check Path `/health`.
    - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (lần đầu, sau đó đặt `false`), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
    - Settings → **Deploy Hook** → copy URL → lưu vào GitHub Secret `RENDER_DEPLOY_HOOK_API`.
-4. **Web:** tương tự với image `ghcr.io/LHTCoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → CD lấy từ GitHub Variable `PRODUCTION_API_URL` và truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
+4. **Web:** tương tự với image `ghcr.io/lhtcoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → CD lấy từ GitHub Variable `PRODUCTION_API_URL` và truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
 5. Nếu dùng image private trên GHCR: Render → *Account Settings → Registry Credentials* thêm GHCR với GitHub PAT (`read:packages`). Đơn giản hơn: đặt package **public** trên GitHub (Packages → Package settings → Change visibility).
 6. GitHub → *Settings → Secrets and variables → Actions*:
    - **Secrets** (bí mật, không hiện trong log): `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB`.
@@ -37,7 +37,7 @@ push main / tag v*  →  quality-gate (lint, test, build)  →  build-push (dock
 | Bước | Thực hiện | Bằng chứng |
 |---|---|---|
 | Quality gate | tái sử dụng `ci.yml` (`workflow_call`) | job `quality-gate` |
-| Image tag | `ghcr.io/LHTCoder/brewlite-api:<git sha>`, thêm `v1.2.3` khi push tag | job `build-push` |
+| Image tag | `ghcr.io/lhtcoder/brewlite-api:<git sha>`, thêm `v1.2.3` khi push tag | job `build-push` |
 | Push registry | `docker/login-action` với `GITHUB_TOKEN` (`packages: write`) | GHCR packages |
 | Deploy bằng secret CI | `curl -fsS "$RENDER_DEPLOY_HOOK_API&imgURL=$IMAGE"` | job `deploy` |
 | Migration an toàn | chạy trong entrypoint container trước khi listen; Render chỉ chuyển traffic khi health check pass | `apps/api/docker-entrypoint.sh` |
@@ -59,8 +59,8 @@ push main / tag v*  →  quality-gate (lint, test, build)  →  build-push (dock
 
 **Cách 3 – Thủ công:**
 ```bash
-curl -fsS "$RENDER_DEPLOY_HOOK_API&imgURL=ghcr.io/LHTCoder/brewlite-api:<sha-cu>"
-curl -fsS "$RENDER_DEPLOY_HOOK_WEB&imgURL=ghcr.io/LHTCoder/brewlite-web:<sha-cu>"
+curl -fsS "$RENDER_DEPLOY_HOOK_API&imgURL=ghcr.io/lhtcoder/brewlite-api:<sha-cu>"
+curl -fsS "$RENDER_DEPLOY_HOOK_WEB&imgURL=ghcr.io/lhtcoder/brewlite-web:<sha-cu>"
 ```
 Migration: nếu bản mới đã thêm migration không tương thích, chạy `npm run migration:revert` với `DATABASE_URL` production (từ máy dev, qua External URL tạm thời bật rồi tắt) **trước** khi rollback image.
 
