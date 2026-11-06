@@ -30,7 +30,7 @@ jobs:
         run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_WEB }}&imgURL=${{ env.IMAGE_WEB }}:${{ inputs.image_tag }}"
       - name: Smoke test sau rollback
         env:
-          API_URL: ${{ secrets.PRODUCTION_API_URL }}
-          WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+          API_URL: ${{ vars.PRODUCTION_API_URL }}
+          WEB_URL: ${{ vars.PRODUCTION_WEB_URL }}
           EXPECTED_VERSION: ${{ inputs.image_tag }}
         run: bash scripts/smoke-test.sh
