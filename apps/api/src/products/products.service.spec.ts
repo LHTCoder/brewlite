@@ -60,3 +60,9 @@ describe('ProductsService', () => {
     expect(p.sizes.map((s) => s.name)).toEqual(['S', 'L']);
   });
 });
+
+describe('Minh chứng CI', () => {
+  it('cố ý sai để CI phát hiện lỗi', () => {
+    expect(1 + 1).toBe(3);
+  });
+});
