@@ -1,0 +1,68 @@
+@startuml activity-menu
+' Activity-02: Xem menu và chi tiết sản phẩm (FR-01, FR-02)
+skinparam ActivityBackgroundColor #FBF7F2
+skinparam ActivityBorderColor #8A5733
+skinparam ActivityDiamondBackgroundColor #F3E9DC
+
+|Khách hàng|
+start
+:Mở ứng dụng / trang chủ;
+|Next.js UI|
+:Hiển thị skeleton (loading);
+:GET /products;
+|NestJS API|
+:Truy vấn products (is_available = true)
+join sizes, toppings;
+|Next.js UI|
+if (Phản hồi?) then (lỗi mạng / 5xx)
+  :Hiển thị Error state + nút "Thử lại";
+  |Khách hàng|
+  :Nhấn "Thử lại";
+  |Next.js UI|
+  :GET /products;
+  detach
+elseif (Mảng rỗng?) then (rỗng)
+  :Hiển thị Empty state "Menu đang trống";
+  stop
+else (có dữ liệu)
+  :Hiển thị lưới sản phẩm theo danh mục;
+endif
+
+|Khách hàng|
+repeat
+  :Chọn tab danh mục / gõ từ khóa;
+  |Next.js UI|
+  :Lọc danh sách phía client;
+  if (Không còn món phù hợp?) then (đúng)
+    :Empty state "Không tìm thấy món";
+  else (có)
+    :Cập nhật lưới sản phẩm;
+  endif
+  |Khách hàng|
+repeat while (Đã thấy món muốn mua?) is (chưa) not (rồi)
+
+:Chạm vào thẻ sản phẩm;
+|Next.js UI|
+:GET /products/:id;
+|NestJS API|
+if (id hợp lệ & tồn tại?) then (không)
+  :404 / 400;
+  |Next.js UI|
+  :Hiển thị lỗi "Sản phẩm không tồn tại";
+  stop
+else (có)
+  :Trả chi tiết: mô tả, giá, sizes, toppings, stock;
+endif
+|Next.js UI|
+:Hiển thị chi tiết, size mặc định, số lượng = 1;
+if (stock = 0?) then (hết hàng)
+  :Nhãn "Hết hàng", nút thêm giỏ vô hiệu;
+  stop
+else (còn)
+  :Nút "Thêm vào giỏ" = (giá + size + topping) × số lượng;
+endif
+|Khách hàng|
+:Chọn size, topping, số lượng;
+:Nhấn "Thêm vào giỏ" (→ Activity-03);
+stop
+@enduml

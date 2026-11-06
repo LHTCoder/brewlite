@@ -1,0 +1,164 @@
+@startuml activity-checkout
+' Activity-01: Luồng end-to-end Xem menu → Giỏ hàng → Đặt đơn → Thanh toán → Theo dõi (Task 2.1)
+' Có swimlane cho Khách hàng / Next.js UI / NestJS API + DB / Payment Service
+skinparam ActivityBackgroundColor #FBF7F2
+skinparam ActivityBorderColor #8A5733
+skinparam ActivityDiamondBackgroundColor #F3E9DC
+
+|Khách hàng|
+start
+:Mở ứng dụng BrewLite (PWA);
+|Next.js UI|
+:GET /products;
+|NestJS API + PostgreSQL|
+:Truy vấn sản phẩm đang bán;
+|Next.js UI|
+if (Nhận được dữ liệu?) then (lỗi mạng / 5xx)
+  :Hiển thị Error state + nút "Thử lại";
+  |Khách hàng|
+  :Nhấn Thử lại;
+  |Next.js UI|
+  :GET /products;
+  note right: lặp lại cho tới khi thành công
+else (200)
+endif
+if (Danh sách rỗng?) then (rỗng)
+  :Hiển thị Empty state "Menu đang trống";
+  stop
+else (có món)
+  :Hiển thị menu (FR-01);
+endif
+
+|Khách hàng|
+:Chọn sản phẩm;
+|Next.js UI|
+:GET /products/:id → hiển thị size, topping, tồn kho (FR-02);
+|Khách hàng|
+if (Món còn hàng?) then (hết hàng)
+  :Thấy nhãn "Hết hàng" – nút thêm bị vô hiệu;
+  :Chọn món khác;
+  detach
+else (còn)
+  :Chọn size, topping, số lượng → Thêm vào giỏ;
+endif
+|Next.js UI|
+:Gộp dòng trùng cấu hình, giới hạn theo tồn kho,
+lưu giỏ vào localStorage (FR-03);
+
+|Khách hàng|
+:Mở giỏ hàng → nhấn "Đặt đơn";
+|Next.js UI|
+if (Đã đăng nhập (JWT hợp lệ)?) then (chưa)
+  :Chuyển tới /login?next=/checkout;
+  |Khách hàng|
+  :Đăng nhập hoặc đăng ký (FR-04);
+  |NestJS API + PostgreSQL|
+  :Xác thực, phát JWT;
+  |Next.js UI|
+  :Quay lại /checkout (giỏ vẫn giữ);
+else (rồi)
+endif
+
+:Hiển thị màn hình Checkout;
+|Khách hàng|
+if (Nhập mã khuyến mãi?) then (có)
+  |Next.js UI|
+  :GET /promotions/:code?subtotal=…;
+  |NestJS API + PostgreSQL|
+  :Kiểm tra hiệu lực, đơn tối thiểu, maxDiscount (FR-07);
+  |Next.js UI|
+  if (valid?) then (không)
+    :Hiển thị lý do, discount = 0;
+  else (có)
+    :Hiển thị số tiền giảm;
+  endif
+  |Khách hàng|
+else (không)
+endif
+:Chọn phương thức Ví / Thẻ, nhấn "Đặt đơn & thanh toán";
+
+|Next.js UI|
+:Sinh idempotencyKey (UUID);
+:POST /orders {items, promotionCode, note} + Bearer JWT;
+
+|NestJS API + PostgreSQL|
+:Kiểm tra JWT & validate DTO;
+if (Hợp lệ?) then (401 / 400)
+  |Next.js UI|
+  :Hiển thị lỗi theo trường
+  (401 → về trang đăng nhập);
+  stop
+else (ok)
+endif
+partition "Transaction tạo đơn" {
+  :Với mỗi dòng: SELECT product FOR UPDATE;
+  if (isAvailable && stock >= quantity?) then (không – FR-05)
+    :ROLLBACK;
+    |Next.js UI|
+    :Hiển thị 422 "“Món” chỉ còn N phần";
+    |Khách hàng|
+    :Sửa số lượng trong giỏ;
+    stop
+  else (đủ)
+    |NestJS API + PostgreSQL|
+    :Tính unitPrice, lineTotal; trừ stock;
+    :Tính subtotal, discount, total; sinh mã BL-XXXXX;
+    :INSERT orders (PENDING) + order_items;
+    :COMMIT;
+  endif
+}
+
+|Next.js UI|
+:Lưu pendingOrder;
+:POST /payments {orderId, method, idempotencyKey, cardNumber?};
+
+|NestJS API + PostgreSQL|
+if (idempotencyKey đã tồn tại?) then (có – FR-09)
+  :Trả lại Payment cũ (không gọi cổng thanh toán);
+else (chưa)
+  partition "Transaction thanh toán" {
+    :Khóa đơn FOR UPDATE; kiểm tra chủ sở hữu & status = PENDING;
+    |Payment Service|
+    :charge(method, amount);
+    |NestJS API + PostgreSQL|
+    if (Kết quả?) then (thất bại)
+      :INSERT payments (FAILED, reason);
+      :Đơn giữ PENDING; COMMIT;
+    else (thành công)
+      :INSERT payments (SUCCEEDED, providerRef);
+      :UPDATE orders SET status = PAID;
+      :INSERT loyalty_transactions (EARN ⌊total/10000⌋);
+      :UPDATE users SET loyalty_points += n; COMMIT;
+    endif
+  }
+endif
+
+|Next.js UI|
+if (payment.status?) then (FAILED)
+  :Hiển thị lý do thất bại + mã đơn,
+  sinh idempotencyKey mới,
+  nút "Thử thanh toán lại";
+  |Khách hàng|
+  if (Thử lại?) then (có)
+    :Đổi phương thức / thẻ khác;
+    |Next.js UI|
+    :POST /payments (key mới);
+    detach
+  else (hủy)
+    |Next.js UI|
+    :POST /orders/:id/cancel → hoàn tồn kho;
+    stop
+  endif
+else (SUCCEEDED)
+  :Xóa giỏ hàng; điều hướng /orders/:id?paid=1;
+  :Hiển thị xác nhận: mã đơn, tổng tiền, trạng thái "Đã thanh toán";
+endif
+
+|Khách hàng|
+:Theo dõi trạng thái (tự làm mới 10s);
+|NestJS API + PostgreSQL|
+:Nhân viên cập nhật PAID → PREPARING → READY → COMPLETED (FR-13);
+|Khách hàng|
+:Nhận đồ uống tại quầy khi READY;
+stop
+@enduml

@@ -1,0 +1,43 @@
+@startuml sequence-staff-status
+' Sequence-03: Nhân viên cập nhật trạng thái đơn và khách theo dõi (FR-13, FR-10)
+skinparam ParticipantBackgroundColor #FBF7F2
+skinparam ParticipantBorderColor #8A5733
+autonumber
+actor "Nhân viên quầy" as S
+participant "Next.js UI\n(/staff)" as SUI
+participant "NestJS API\nOrdersController" as API
+participant "OrdersService" as SVC
+database "PostgreSQL" as DB
+participant "Next.js UI\n(/orders/:id)" as CUI
+actor Customer as C
+
+loop mỗi 8 giây
+  SUI -> API : GET /orders/staff/all (Bearer JWT STAFF)
+  API -> API : JwtAuthGuard + @Roles(STAFF, MANAGER)
+  API -> DB : SELECT orders + items WHERE status IN (PAID, PREPARING, READY)
+  API --> SUI : 200 [orders]
+end
+S -> SUI : Nhấn "Bắt đầu pha chế" trên đơn BL-7F3A2
+SUI -> API : PATCH /orders/:id/status {status: PREPARING}
+API -> SVC : updateStatus(id, PREPARING, actor)
+SVC -> DB : SELECT order
+SVC -> SVC : assertTransition(PAID → PREPARING)
+alt chuyển trạng thái không hợp lệ (vd. PAID → COMPLETED)
+  SVC --> API : BadRequestException
+  API --> SUI : 400 "Không thể chuyển trạng thái từ PAID sang COMPLETED"
+  SUI -> S : Toast lỗi
+else hợp lệ
+  SVC -> DB : UPDATE orders SET status = PREPARING
+  SVC -> SVC : log "Order BL-7F3A2: PAID -> PREPARING by staff@…"
+  API --> SUI : 200 Order{status: PREPARING}
+  SUI -> S : Toast "BL-7F3A2 → PREPARING"
+end
+
+== Khách theo dõi ==
+loop mỗi 10 giây khi status ∉ {COMPLETED, CANCELLED}
+  CUI -> API : GET /orders/:id (Bearer JWT khách)
+  API -> DB : SELECT order
+  API --> CUI : 200 Order{status}
+  CUI -> C : Cập nhật thanh tiến trình (Đang pha chế / Sẵn sàng nhận)
+end
+@enduml
