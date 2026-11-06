@@ -1,0 +1,57 @@
+# BrewLite – chạy toàn bộ hệ thống ở local: docker compose up --build
+# Web: http://localhost:3000 | API: http://localhost:4000 | Swagger: http://localhost:4000/docs
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: brewlite-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-brewlite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-brewlite_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-brewlite}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-brewlite} -d ${POSTGRES_DB:-brewlite}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./apps/api
+      args:
+        APP_VERSION: ${APP_VERSION:-local}
+    container_name: brewlite-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      API_PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-brewlite}:${POSTGRES_PASSWORD:-brewlite_dev_password}@db:5432/${POSTGRES_DB:-brewlite}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-jwt-secret-please-change-0123456789}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SWAGGER_ENABLED: 'true'
+    ports:
+      - '${API_PORT:-4000}:4000'
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    container_name: brewlite-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+
+volumes:
+  pgdata:
