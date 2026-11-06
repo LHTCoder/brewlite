@@ -1,0 +1,29 @@
+@startuml c4-container
+' C4 Level 2 – Container diagram BrewLite (Task 3.1)
+!include <C4/C4_Container>
+
+LAYOUT_WITH_LEGEND()
+
+Person(customer, "Khách hàng", "Đặt đồ uống qua điện thoại")
+Person(staff, "Nhân viên / Quản lý", "Xử lý đơn tại quầy")
+
+System_Boundary(brewlite, "BrewLite") {
+  Container(web, "Web App (PWA)", "Next.js 14, React, Tailwind", "Menu, giỏ hàng, checkout, theo dõi đơn, màn hình quầy. Mobile-first, cài được như app.")
+  Container(api, "API", "NestJS 10, TypeORM", "REST/JSON. Module: products, auth (JWT), orders, payments, promotions, loyalty, health. Validate, transaction, logging.")
+  ContainerDb(db, "Database", "PostgreSQL 16", "users, products, product_sizes, toppings, orders, order_items, payments, promotions, loyalty_transactions. Schema qua migration.")
+  Container(pay, "Payment Service (mô phỏng)", "NestJS provider", "Interface charge(); quy tắc xác định để test. Thay bằng adapter MoMo/VNPay sau.")
+}
+
+System_Ext(render, "Render.com", "Hosting container + Postgres managed, TLS")
+System_Ext(gh, "GitHub + Actions + GHCR", "Repo, CI/CD, container registry")
+
+Rel(customer, web, "Dùng", "HTTPS")
+Rel(staff, web, "Dùng /staff", "HTTPS")
+Rel(web, api, "Gọi API", "HTTPS/JSON, Bearer JWT")
+Rel(api, db, "Đọc/ghi", "TCP 5432, TypeORM")
+Rel(api, pay, "charge()", "in-process")
+Rel(gh, render, "Deploy image theo SHA", "Deploy hook")
+Rel(render, web, "Chạy container", "")
+Rel(render, api, "Chạy container", "")
+Rel(render, db, "Quản lý", "")
+@enduml
