@@ -20,9 +20,11 @@ Sơ đồ: [deployment-production.svg](./diagrams/deployment-production.svg) · 
    - Port `4000`; Health Check Path `/health`.
    - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (lần đầu, sau đó đặt `false`), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
    - Settings → **Deploy Hook** → copy URL → lưu vào GitHub Secret `RENDER_DEPLOY_HOOK_API`.
-4. **Web:** tương tự với image `ghcr.io/LHTCoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → đặt trong GitHub Secret/Variable `NEXT_PUBLIC_API_URL=https://brewlite-api.onrender.com` để CD truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
+4. **Web:** tương tự với image `ghcr.io/LHTCoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → CD lấy từ GitHub Variable `PRODUCTION_API_URL` và truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
 5. Nếu dùng image private trên GHCR: Render → *Account Settings → Registry Credentials* thêm GHCR với GitHub PAT (`read:packages`). Đơn giản hơn: đặt package **public** trên GitHub (Packages → Package settings → Change visibility).
-6. GitHub → *Settings → Secrets and variables → Actions*: thêm `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB`, `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL`, `NEXT_PUBLIC_API_URL`.
+6. GitHub → *Settings → Secrets and variables → Actions*:
+   - **Secrets** (bí mật, không hiện trong log): `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB`.
+   - **Variables** (URL công khai): `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL`.
 7. (Tùy chọn) `render.yaml` ở gốc repo cho phép tạo toàn bộ bằng *Blueprint*.
 
 ## 3. Pipeline CD (`.github/workflows/cd.yml`)
