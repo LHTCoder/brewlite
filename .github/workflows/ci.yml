@@ -1,6 +1,6 @@
 # CI – chạy khi mở/cập nhật Pull Request và khi push lên main
-# Sprint 1 (Task 4.4): Install → Lint → Unit Test → Build
-# Branch protection trên main yêu cầu các job này pass trước khi merge
+# Install → Lint → Unit Test → (Integration Test với Postgres) → Build
+# Branch protection trên main yêu cầu các job này pass trước khi merge (Task 4.4)
 name: CI
 
 on:
@@ -24,7 +24,19 @@ jobs:
     defaults:
       run:
         working-directory: apps/api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: brewlite
+          POSTGRES_PASSWORD: brewlite
+          POSTGRES_DB: brewlite_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U brewlite -d brewlite_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      DATABASE_URL: postgresql://brewlite:brewlite@localhost:5432/brewlite_test
       JWT_SECRET: ci-only-secret-not-for-production-0123456789
       NODE_ENV: test
     steps:
@@ -40,8 +52,12 @@ jobs:
         run: npm run lint
       - name: Unit test
         run: npm test -- --ci
+      - name: Integration test (API tạo đơn / thanh toán)
+        run: npm run test:integration -- --ci
       - name: Build
         run: npm run build
+      - name: Docker build (kiểm tra Dockerfile)
+        run: docker build -t brewlite-api:ci --build-arg APP_VERSION=${{ github.sha }} .
 
   web:
     name: Web – lint, test, build
@@ -69,3 +85,64 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Docker build (kiểm tra Dockerfile)
+        run: docker build -t brewlite-web:ci --build-arg NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL .
+
+  e2e:
+    name: E2E – menu → thanh toán → xác nhận (Playwright)
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: brewlite
+          POSTGRES_PASSWORD: brewlite
+          POSTGRES_DB: brewlite_e2e
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U brewlite -d brewlite_e2e"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://brewlite:brewlite@localhost:5432/brewlite_e2e
+      JWT_SECRET: ci-only-secret-not-for-production-0123456789
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      CORS_ORIGINS: http://localhost:3000
+      API_PORT: '4000'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install all
+        run: |
+          (cd apps/api && npm ci --no-audit --no-fund)
+          (cd apps/web && npm ci --no-audit --no-fund)
+          (cd tests && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium)
+      - name: Build & start API
+        run: |
+          cd apps/api
+          npm run build
+          npm run migration:run
+          npm run seed
+          nohup node dist/main.js > ../../api.log 2>&1 &
+      - name: Build & start Web
+        run: |
+          cd apps/web
+          npm run build
+          nohup npm start > ../../web.log 2>&1 &
+      - name: Wait for services
+        run: |
+          npx --yes wait-on@7 http://localhost:4000/health http://localhost:3000 -t 120000
+      - name: Run E2E
+        run: cd tests && npm run e2e
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            tests/playwright-report
+            api.log
+            web.log
+          retention-days: 7
