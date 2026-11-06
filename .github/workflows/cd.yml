@@ -1,0 +1,127 @@
+# CD – Push/Tag → Quality gate → Build image → Push GHCR → Deploy (Render) → Smoke test (Task 5.3)
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_API: ghcr.io/${{ github.repository_owner }}/brewlite-api
+  IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/brewlite-web
+
+jobs:
+  quality-gate:
+    name: 1. Quality gate (lint, test, build)
+    uses: ./.github/workflows/ci.yml
+
+  build-push:
+    name: 2. Build & push Docker images
+    needs: quality-gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      sha_tag: ${{ steps.meta.outputs.sha_tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        name: Tính tag image (commit SHA + semver nếu có)
+        run: |
+          SHA_TAG=$(echo "${{ github.sha }}" | cut -c1-12)
+          VERSION="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then VERSION="${GITHUB_REF_NAME#v}"; else VERSION="main-${SHA_TAG}"; fi
+          echo "sha_tag=$SHA_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Image tag: $SHA_TAG (version $VERSION)"
+      - name: Build & push API
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          push: true
+          build-args: |
+            APP_VERSION=${{ steps.meta.outputs.version }}+${{ steps.meta.outputs.sha_tag }}
+          tags: |
+            ${{ env.IMAGE_API }}:${{ steps.meta.outputs.sha_tag }}
+            ${{ env.IMAGE_API }}:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}:{1}', env.IMAGE_API, steps.meta.outputs.version) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build & push Web
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/web
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || secrets.PRODUCTION_API_URL }}
+          tags: |
+            ${{ env.IMAGE_WEB }}:${{ steps.meta.outputs.sha_tag }}
+            ${{ env.IMAGE_WEB }}:latest
+            ${{ startsWith(github.ref, 'refs/tags/v') && format('{0}:{1}', env.IMAGE_WEB, steps.meta.outputs.version) || '' }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: 3. Deploy production (Render deploy hook)
+    needs: build-push
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ secrets.PRODUCTION_WEB_URL }}
+    steps:
+      - name: Deploy API (migration chạy trong entrypoint container)
+        run: |
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_API }}&imgURL=${{ env.IMAGE_API }}:${{ needs.build-push.outputs.sha_tag }}"
+          echo "API deploy triggered with tag ${{ needs.build-push.outputs.sha_tag }}"
+      - name: Deploy Web
+        run: |
+          curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_WEB }}&imgURL=${{ env.IMAGE_WEB }}:${{ needs.build-push.outputs.sha_tag }}"
+          echo "Web deploy triggered"
+
+  smoke-test:
+    name: 4. Smoke test sau triển khai
+    needs: [build-push, deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chờ health check & kiểm tra phiên bản
+        env:
+          API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+          EXPECTED_VERSION: ${{ needs.build-push.outputs.sha_tag }}
+        run: bash scripts/smoke-test.sh
+      - name: Hướng dẫn rollback khi thất bại
+        if: failure()
+        run: |
+          echo "::error::Smoke test THẤT BẠI. Pipeline dừng. Bản deploy trước đó vẫn đang phục vụ nếu health check Render không pass."
+          echo "Rollback: Actions → 'Rollback production' → Run workflow với image_tag của bản ổn định trước (xem Packages trên GHCR)."
+          echo "Hoặc Render Dashboard → Service → Events → Rollback."
+          exit 1
+
+  release:
+    name: 5. GitHub Release (khi push tag)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          body_path: docs/sprints/release-notes.md
+          generate_release_notes: true
