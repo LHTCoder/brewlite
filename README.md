@@ -21,7 +21,7 @@ Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đ�
 | API | https://brewlite-api-t8xs.onrender.com |
 | Health check | https://brewlite-api-t8xs.onrender.com/health |
 | Swagger | https://brewlite-api-t8xs.onrender.com/docs |
-| Video demo | *(link YouTube/Drive)* |
+| Video demo | [docs/evidence/video/brewlite-demo.mp4](docs/evidence/video/brewlite-demo.mp4) – luồng end-to-end trên production (quay tự động, có chú thích) |
 
 Tài khoản demo: `customer@brewlite.dev / Customer@123` · nhân viên `staff@brewlite.dev / Staff@123` · quản lý `manager@brewlite.dev / Manager@123`.
 Mã khuyến mãi: `WELCOME10` (−10 %, tối đa 20k, đơn ≥ 50k), `FREESHIP15K` (−15k, đơn ≥ 100k).

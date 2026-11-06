@@ -1,6 +1,6 @@
 # Sprint 2 – Review & Retrospective
 
-**Thời gian:** Tuần 3–4 · **Sprint Goal:** Hoàn thành luồng end-to-end, tự động hóa đóng gói và triển khai production có thể truy cập.
+**Sprint Goal:** Hoàn thành luồng end-to-end, tự động hóa đóng gói và triển khai production có thể truy cập.
 
 ## Sprint Review
 
@@ -15,7 +15,7 @@
 | Integration test, E2E Playwright, docker-compose, `/health` | ✅ | job `e2e` trong CI |
 | CD: image tag SHA → GHCR → Render → smoke test → rollback | ✅ | workflow `CD` #6 (15m47s, tất cả job xanh) – `docs/evidence/github/07-cd-run-thanh-cong.png`; workflow `Rollback production` |
 | Production HTTPS: web + API + health, DB private, secret ngoài repo | ✅ | https://brewlite-web-00zk.onrender.com · https://brewlite-api-t8xs.onrender.com/health – `docs/evidence/production/` |
-| Release v1.0.0 + release notes + video demo | ✅ | GitHub Release, link video |
+| Release v1.0.0 + release notes + video demo | ✅ | https://github.com/LHTCoder/brewlite/releases/tag/v1.0.0; video: xem README |
 
 **Demo trực tiếp:** mở production trên điện thoại → chọn Trà sữa (L + trân châu ×2) → áp `WELCOME10` → thẻ `…0002` bị từ chối → đổi sang ví → xác nhận mã `BL-…` → màn hình quầy chuyển PREPARING → READY → khách thấy cập nhật.
 
@@ -31,4 +31,3 @@
 | Branch protection + CI bắt buộc chặn được PR có test sai (PR #5) | Render Free "ngủ" sau 15 phút, lần gọi đầu mất ~1 phút | Smoke test chờ tối đa 5 phút; mở trang trước buổi demo vài phút |
 | Tài liệu và sơ đồ cập nhật theo góp ý của nhóm trước khi phát hành (PR #10) | Thiếu thời gian cho FR-15/16 (quản trị menu, báo cáo) | Đưa vào backlog Sprint 3 |
 
-**Velocity:** 50 SP kế hoạch / 47 SP hoàn thành.
