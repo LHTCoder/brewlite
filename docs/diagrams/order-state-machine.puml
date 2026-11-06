@@ -1,0 +1,17 @@
+@startuml order-state-machine
+' Máy trạng thái đơn hàng – bổ trợ cho class diagram (enum OrderStatus) và FR-13
+skinparam state {
+  BackgroundColor #FBF7F2
+  BorderColor #8A5733
+}
+[*] --> PENDING : POST /orders\n(trừ tồn kho)
+PENDING --> PAID : POST /payments\nSUCCEEDED
+PENDING --> PENDING : POST /payments\nFAILED (giữ đơn, thử lại)
+PENDING --> CANCELLED : khách / nhân viên hủy\n(hoàn tồn kho)
+PAID --> PREPARING : nhân viên bắt đầu pha chế
+PAID --> CANCELLED : nhân viên hủy\n(hoàn tồn kho)
+PREPARING --> READY : pha chế xong
+READY --> COMPLETED : khách đã nhận
+COMPLETED --> [*]
+CANCELLED --> [*]
+@enduml

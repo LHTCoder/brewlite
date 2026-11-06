@@ -1,0 +1,42 @@
+@startuml sequence-auth
+' Sequence-02: Đăng nhập và sử dụng JWT (FR-04) – bổ trợ cho Sequence-01
+skinparam ParticipantBackgroundColor #FBF7F2
+skinparam ParticipantBorderColor #8A5733
+autonumber
+actor Customer as C
+participant "Next.js UI\n(/login)" as UI
+participant "NestJS API\nAuthController" as API
+participant "AuthService" as S
+database "PostgreSQL" as DB
+
+C -> UI : Nhập email, mật khẩu → Đăng nhập
+UI -> UI : validate client (email, ≥ 8 ký tự)
+UI -> API : POST /auth/login {email, password}
+API -> API : ValidationPipe(LoginDto)
+API -> S : login(dto)
+S -> DB : SELECT u.*, u.password_hash FROM users WHERE email = ?
+DB --> S : user | null
+alt user null hoặc bcrypt.compare() = false
+  S --> API : UnauthorizedException
+  API --> UI : 401 "Email hoặc mật khẩu không đúng"
+  UI -> C : Hiển thị lỗi (không tiết lộ email tồn tại)
+else đúng mật khẩu
+  S -> S : jwt.sign({sub, email, role}, secret, 24h)
+  S --> API : {accessToken, user}
+  API --> UI : 200 {accessToken, user}
+  UI -> UI : localStorage.set(token, user)
+  UI -> C : Điều hướng ?next= (vd. /checkout)
+end
+
+== Gọi API được bảo vệ ==
+UI -> API : GET /orders\nAuthorization: Bearer <token>
+API -> API : JwtAuthGuard.verify(token) → req.user
+alt token thiếu / sai / hết hạn
+  API --> UI : 401
+  UI -> UI : dispatch "brewlite:unauthorized" → logout
+  UI -> C : Chuyển /login?next=/orders
+else hợp lệ
+  API -> DB : SELECT orders WHERE userId = req.user.sub
+  API --> UI : 200 [orders]
+end
+@enduml

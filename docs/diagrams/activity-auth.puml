@@ -1,0 +1,68 @@
+@startuml activity-auth
+' Activity-04: Đăng ký / Đăng nhập và cấp JWT (FR-04)
+skinparam ActivityBackgroundColor #FBF7F2
+skinparam ActivityBorderColor #8A5733
+skinparam ActivityDiamondBackgroundColor #F3E9DC
+
+|Khách hàng|
+start
+:Mở /login (trực tiếp hoặc bị chuyển hướng ?next=);
+if (Đã có tài khoản?) then (chưa)
+  :Chọn "Đăng ký";
+  :Nhập họ tên, email, mật khẩu, SĐT (tùy chọn);
+  |Next.js UI|
+  :Validate client: email hợp lệ, mật khẩu ≥ 8 ký tự,
+  họ tên ≥ 2 ký tự, SĐT 10 số;
+  if (Hợp lệ?) then (không)
+    :Hiển thị lỗi dưới từng trường;
+    stop
+  endif
+  :POST /auth/register;
+  |NestJS API|
+  :ValidationPipe (RegisterDto);
+  if (DTO hợp lệ?) then (không)
+    :400 + danh sách lỗi theo trường;
+    |Next.js UI|
+    :Hiển thị lỗi server;
+    stop
+  endif
+  :Tìm user theo email (lowercase);
+  if (Email đã tồn tại?) then (có)
+    :409 "Email đã được sử dụng";
+    |Next.js UI|
+    :Hiển thị lỗi;
+    stop
+  endif
+  :bcrypt.hash(password, 10);
+  :INSERT users (role = CUSTOMER);
+else (rồi)
+  :Nhập email, mật khẩu;
+  |Next.js UI|
+  :Validate client;
+  :POST /auth/login;
+  |NestJS API|
+  :Tìm user kèm passwordHash;
+  if (User tồn tại và bcrypt.compare đúng?) then (không)
+    :401 "Email hoặc mật khẩu không đúng"
+    (cùng thông báo cho cả 2 trường hợp);
+    |Next.js UI|
+    :Hiển thị lỗi;
+    stop
+  endif
+endif
+|NestJS API|
+:Ký JWT {sub, email, role} (HS256, hạn 24h);
+:Trả {accessToken, user};
+|Next.js UI|
+:Lưu token + user vào localStorage (store/auth);
+:Điều hướng tới ?next= (mặc định /);
+|Khách hàng|
+:Tiếp tục đặt đơn / xem lịch sử;
+stop
+
+note right
+  Khi API trả 401 ở bất kỳ màn hình nào
+  (token hết hạn): client phát sự kiện
+  "unauthorized" → xóa phiên → về /login?next=…
+end note
+@enduml

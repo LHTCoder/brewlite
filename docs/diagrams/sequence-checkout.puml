@@ -1,0 +1,114 @@
+@startuml sequence-checkout
+' Sequence-01: UC-01 Đặt và thanh toán đơn hàng (Task 2.2)
+skinparam sequenceMessageAlign center
+skinparam ParticipantBackgroundColor #FBF7F2
+skinparam ParticipantBorderColor #8A5733
+skinparam DatabaseBackgroundColor #F3E9DC
+autonumber
+
+actor "Customer" as C
+participant "Next.js UI\n(/checkout)" as UI
+participant "NestJS API" as API
+database "PostgreSQL" as DB
+participant "Payment Service\n(mô phỏng)" as PAY
+
+C -> UI : Nhấn "Đặt đơn & thanh toán"
+UI -> UI : idempotencyKey = randomUUID()
+
+== Bước 1: Tạo đơn hàng (FR-05, FR-06, FR-07) ==
+UI -> API : POST /orders\nAuthorization: Bearer <JWT>\n{items[], promotionCode?, note?}
+activate API
+API -> API : JwtAuthGuard.verify(JWT)
+alt JWT thiếu / hết hạn
+  API --> UI : 401 Unauthorized
+  UI -> C : Chuyển về /login?next=/checkout
+else JWT hợp lệ
+  API -> API : ValidationPipe(CreateOrderDto)\n(whitelist, quantity 1..20, UUID)
+  alt DTO không hợp lệ
+    API --> UI : 400 {message[]}
+    UI -> C : Hiển thị lỗi theo trường
+  else DTO hợp lệ
+    API -> DB : BEGIN
+    loop mỗi dòng items[i]
+      API -> DB : SELECT * FROM products WHERE id=? FOR UPDATE
+      DB --> API : product (stock, basePrice, sizes, toppings)
+      alt stock < quantity hoặc !isAvailable
+        API -> DB : ROLLBACK
+        API --> UI : 422 "“Tên món” chỉ còn N phần"
+        UI -> C : Hiển thị lỗi, giữ giỏ hàng
+      else đủ hàng
+        API -> API : unitPrice = base + sizeExtra + Σtopping\nlineTotal = unitPrice × qty
+        API -> DB : UPDATE products SET stock = stock - qty
+      end
+    end
+    opt promotionCode
+      API -> DB : SELECT * FROM promotions WHERE code=?
+      API -> API : applyPromotion(subtotal) → discount
+    end
+    API -> DB : INSERT orders(code, status=PENDING, subtotal, discount, total)
+    API -> DB : INSERT order_items(...) ×n
+    API -> DB : COMMIT
+    DB --> API : OK
+    API --> UI : 201 Order{id, code, status=PENDING, total}
+    deactivate API
+    UI -> UI : pendingOrder = order
+  end
+end
+
+== Bước 2: Thanh toán (FR-08, FR-09, FR-14) ==
+UI -> API : POST /payments\nIdempotency-Key: <key>\n{orderId, method, cardNumber?}
+activate API
+API -> API : JwtAuthGuard.verify(JWT)
+API -> DB : SELECT * FROM payments WHERE idempotency_key=?
+alt Đã tồn tại cùng key (client gửi lại)
+  DB --> API : payment cũ
+  API --> UI : 201 payment (kết quả cũ, không gọi cổng thanh toán)
+else Key mới
+  API -> DB : BEGIN
+  API -> DB : SELECT * FROM orders WHERE id=? FOR UPDATE
+  DB --> API : order
+  alt order.user ≠ actor
+    API -> DB : ROLLBACK
+    API --> UI : 403 Forbidden
+  else order.status ≠ PENDING
+    API -> DB : ROLLBACK
+    API --> UI : 400 "Đơn đang ở trạng thái X"
+  else Hợp lệ
+    API -> PAY : charge({method, amount=order.total, cardNumber?})
+    activate PAY
+    PAY -> PAY : Quy tắc mô phỏng:\nthẻ ...0002 → từ chối\nví > 500.000đ → không đủ
+    alt Thanh toán thành công
+      PAY --> API : {success:true, providerRef}
+      deactivate PAY
+      API -> DB : INSERT payments(status=SUCCEEDED, provider_ref, idempotency_key)
+      API -> DB : UPDATE orders SET status=PAID
+      API -> DB : INSERT loyalty_transactions(EARN, points=⌊total/10000⌋)
+      API -> DB : UPDATE users SET loyalty_points += points
+      API -> DB : COMMIT
+      API --> UI : 201 Payment{status=SUCCEEDED, providerRef}
+      UI -> UI : clearCart()
+      UI -> C : Toast "Thanh toán thành công"\nĐiều hướng /orders/:id?paid=1
+      UI -> API : GET /orders/:id
+      API -> DB : SELECT order + items + payment
+      API --> UI : 200 Order{status=PAID}
+      UI -> C : Màn hình xác nhận: mã BL-XXXXX,\ntổng tiền, tiến trình trạng thái
+    else Thanh toán thất bại
+      PAY --> API : {success:false, reason}
+      API -> DB : INSERT payments(status=FAILED, failure_reason, idempotency_key)
+      API -> DB : COMMIT  (đơn giữ PENDING)
+      API --> UI : 201 Payment{status=FAILED, failureReason}
+      UI -> UI : idempotencyKey = randomUUID()  (lần thử mới)
+      UI -> C : Hiển thị lý do, nút "Thử thanh toán lại" / "Hủy đơn"
+    end
+  end
+end
+deactivate API
+
+== Theo dõi sau thanh toán (FR-10, FR-13) ==
+loop mỗi 10s khi status ∉ {COMPLETED, CANCELLED}
+  UI -> API : GET /orders/:id
+  API -> DB : SELECT ...
+  API --> UI : 200 Order{status}
+  UI -> C : Cập nhật thanh tiến trình
+end
+@enduml

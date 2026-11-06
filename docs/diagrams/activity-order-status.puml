@@ -1,0 +1,69 @@
+@startuml activity-order-status
+' Activity-05: Theo dõi đơn (khách) và cập nhật trạng thái tại quầy (nhân viên) – FR-10, FR-12, FR-13
+skinparam ActivityBackgroundColor #FBF7F2
+skinparam ActivityBorderColor #8A5733
+skinparam ActivityDiamondBackgroundColor #F3E9DC
+
+|Khách hàng|
+start
+:Sau thanh toán → /orders/:id?paid=1;
+|Next.js UI|
+:GET /orders/:id;
+|NestJS API|
+if (Đơn thuộc khách hoặc actor là STAFF/MANAGER?) then (không)
+  :403;
+  |Next.js UI|
+  :Error state;
+  stop
+endif
+:Trả Order + items + payment;
+|Next.js UI|
+:Hiển thị xác nhận, mã BL-XXXXX, thanh tiến trình;
+fork
+  |Next.js UI|
+  repeat
+    :Chờ 10 giây;
+    :GET /orders/:id;
+    :Cập nhật StatusBadge / StatusTimeline;
+  repeat while (status ∉ {COMPLETED, CANCELLED}) is (đúng) not (kết thúc)
+fork again
+  |Nhân viên quầy|
+  :Mở /staff (role STAFF/MANAGER);
+  |Next.js UI|
+  :GET /orders/staff/all (tự làm mới 8 s);
+  :Hiển thị đơn PAID / PREPARING / READY;
+  |Nhân viên quầy|
+  :Nhấn "Bắt đầu pha chế";
+  |Next.js UI|
+  :PATCH /orders/:id/status {PREPARING};
+  |NestJS API|
+  :JwtAuthGuard + @Roles(STAFF, MANAGER);
+  if (Chuyển trạng thái hợp lệ theo ORDER_TRANSITIONS?) then (không)
+    :400 "Không thể chuyển trạng thái";
+    |Next.js UI|
+    :Toast lỗi;
+  else (có)
+    :UPDATE orders SET status; log;
+    |Next.js UI|
+    :Toast "BL-… → PREPARING";
+  endif
+  |Nhân viên quầy|
+  :Pha chế xong → nhấn "Đã xong – gọi khách";
+  |NestJS API|
+  :PAID→PREPARING→READY (kiểm tra máy trạng thái);
+  |Khách hàng|
+  :Thấy trạng thái "Sẵn sàng nhận" → đến quầy đọc mã;
+  |Nhân viên quầy|
+  :Giao đồ uống → nhấn "Khách đã nhận";
+  |NestJS API|
+  :READY → COMPLETED;
+end fork
+|Khách hàng|
+if (Đơn còn PENDING (chưa thanh toán)?) then (có)
+  :Nhấn "Hủy đơn";
+  |NestJS API|
+  :PENDING → CANCELLED; hoàn tồn kho (increment stock);
+  |Khách hàng|
+endif
+stop
+@enduml

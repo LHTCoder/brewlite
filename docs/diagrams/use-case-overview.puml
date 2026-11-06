@@ -1,0 +1,62 @@
+@startuml use-case-overview
+' Sơ đồ use-case tổng quát hệ thống BrewLite (SRS §2)
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #FBF7F2
+  BorderColor #8A5733
+}
+
+actor "Khách hàng" as Guest
+actor "Khách hàng\nđã đăng nhập" as Customer
+actor "Nhân viên quầy" as Staff
+actor "Quản lý" as Manager
+actor "Payment Service\n(mô phỏng)" as Pay <<system>>
+
+Customer -|> Guest
+Manager -|> Staff
+
+rectangle "BrewLite" {
+  usecase "UC-02 Xem menu" as UC2
+  usecase "UC-03 Xem chi tiết\nsản phẩm" as UC3
+  usecase "UC-04 Quản lý giỏ hàng" as UC4
+  usecase "UC-05 Đăng ký" as UC5
+  usecase "UC-06 Đăng nhập" as UC6
+  usecase "UC-01 Đặt và thanh toán\nđơn hàng" as UC1 #F3E9DC
+  usecase "UC-07 Theo dõi\ntrạng thái đơn" as UC7
+  usecase "UC-08 Xem lịch sử đơn" as UC8
+  usecase "UC-09 Hủy đơn\nchưa thanh toán" as UC9
+  usecase "UC-10 Xem điểm thưởng" as UC10
+  usecase "UC-11 Xem đơn\ncần xử lý" as UC11
+  usecase "UC-12 Cập nhật\ntrạng thái đơn" as UC12
+  usecase "UC-13 Quản lý menu &\nkhuyến mãi (Could)" as UC13
+}
+
+Guest --> UC2
+Guest --> UC3
+Guest --> UC4
+Guest --> UC5
+Guest --> UC6
+
+Customer --> UC1
+Customer --> UC7
+Customer --> UC8
+Customer --> UC9
+Customer --> UC10
+
+Staff --> UC11
+Staff --> UC12
+Manager --> UC13
+
+UC1 --> Pay
+UC3 .> UC2 : <<extend>>
+UC1 .> UC4 : <<include>>
+UC1 .> UC6 : <<include>>
+UC7 .> UC1 : <<extend>>
+
+note bottom of UC1
+  Use-case trọng tâm (Task 1.3)
+  FR-05..FR-09, FR-14
+end note
+@enduml
