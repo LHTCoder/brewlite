@@ -3,7 +3,6 @@
 skinparam ActivityBackgroundColor #FBF7F2
 skinparam ActivityBorderColor #8A5733
 skinparam ActivityDiamondBackgroundColor #F3E9DC
-
 |Khách hàng|
 start
 :Nhấn "Thêm vào giỏ" từ chi tiết sản phẩm;
@@ -16,7 +15,6 @@ else (chưa)
 endif
 :Lưu giỏ vào localStorage (persist);
 :Hiển thị toast "Đã thêm … vào giỏ", cập nhật badge;
-
 |Khách hàng|
 :Mở tab Giỏ hàng;
 |Next.js UI (store/cart)|
@@ -27,7 +25,6 @@ else (có món)
   :Hiển thị từng dòng: tên, size, topping, đơn giá, số lượng, thành tiền;
   :Tạm tính = Σ (đơn giá × số lượng);
 endif
-
 |Khách hàng|
 repeat
   switch (Thao tác?)
@@ -52,9 +49,13 @@ repeat
   endswitch
   |Next.js UI (store/cart)|
   :Tính lại tạm tính; lưu localStorage;
+  if (Giỏ trống?) then (trống)
+    :Empty state "Giỏ hàng trống" + nút "Xem menu";
+    stop
+  else (còn món)
+  endif
   |Khách hàng|
 repeat while (Tiếp tục chỉnh?) is (có) not (không)
-
 :Nhấn "Đặt đơn";
 |Next.js UI (store/cart)|
 if (Đã đăng nhập?) then (chưa)

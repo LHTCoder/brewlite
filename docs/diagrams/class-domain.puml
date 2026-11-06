@@ -54,7 +54,6 @@ class User {
   +email : String <<unique>>
   -passwordHash : String
   +fullName : String
-  +phone : String?
   +role : UserRole
   +loyaltyPoints : int = 0
   +createdAt : DateTime
@@ -152,10 +151,10 @@ User "1" -- "0..*" LoyaltyTransaction : tích/đổi >
 Order "1" *-- "1..*" OrderItem : gồm >
 Order "1" -- "0..1" Payment : thanh toán bởi >
 Order "0..*" -- "0..1" Promotion : áp dụng >
-OrderItem "0..*" --> "0..1" Product : tham chiếu >
+OrderItem "0..*" -- "0..1" Product : tham chiếu >
 Product "1" *-- "0..*" ProductSize : có size >
 Product "0..*" -- "0..*" Topping : cho phép >
-LoyaltyTransaction "0..*" --> "0..1" Order : phát sinh từ >
+LoyaltyTransaction "0..*" -- "0..1" Order : phát sinh từ >
 
 User ..> UserRole
 Product ..> ProductCategory
@@ -165,17 +164,4 @@ Payment ..> PaymentStatus
 Promotion ..> PromotionType
 LoyaltyTransaction ..> LoyaltyTransactionType
 
-note top of OrderItem
-  Snapshot tên/giá tại thời điểm đặt
-  để lịch sử đơn không đổi khi menu thay đổi.
-end note
-note right of Payment
-  idempotencyKey unique → cùng yêu cầu
-  gửi lại không tạo giao dịch thứ hai (FR-09)
-end note
-note bottom of OrderStatus
-  PENDING → PAID | CANCELLED
-  PAID → PREPARING | CANCELLED
-  PREPARING → READY → COMPLETED
-end note
 @enduml

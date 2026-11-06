@@ -2,26 +2,28 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
+| Phiên bản | 1.1 – viết lại bối cảnh và kỳ vọng stakeholder theo góp ý của nhóm |
 | Trạng thái | Approved (Sprint 0) |
 | Liên quan | [SRS](./srs.md) · [Đặc tả UC-01](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
 
 ## 1. Vấn đề nghiệp vụ
 
-BrewLite là một quán cà phê – trà sữa quy mô nhỏ (1 cửa hàng, 2–3 nhân viên quầy). Giờ cao điểm (7h–9h, 12h–13h) khách phải **xếp hàng 5–10 phút** để gọi món, nhân viên ghi đơn bằng tay nên **sai size/topping, nhầm đơn** xảy ra thường xuyên; thanh toán tiền mặt làm chậm quầy; chủ quán không có số liệu bán hàng theo món để điều chỉnh menu và tồn kho.
+Tại các cửa hàng cà phê và trà sữa quy mô nhỏ chỉ có 2–3 nhân viên quầy, quy trình phục vụ truyền thống thường quá tải vào giờ cao điểm (7h–9h, 12h–13h). Khách phải **xếp hàng 5–10 phút** chỉ để gọi món; ghi đơn bằng giấy bút dễ **sai kích cỡ, topping hoặc nhầm thứ tự phục vụ**. Thanh toán tiền mặt tại quầy chậm, chưa đáp ứng nhu cầu thanh toán điện tử, khuyến mãi và tích điểm của khách trẻ; người quản lý lại thiếu dữ liệu bán hàng theo từng món để điều chỉnh thực đơn và kiểm soát nguyên liệu.
 
-**Mục tiêu sản phẩm:** một ứng dụng web mobile-first (PWA) cho khách **xem menu → chọn tùy chọn → giỏ hàng → đặt đơn → thanh toán → theo dõi đơn**, giúp giảm thời gian chờ tại quầy, loại bỏ sai sót ghi tay và lưu lại dữ liệu đơn hàng có cấu trúc.
+**Mục tiêu sản phẩm:** BrewLite là ứng dụng web mobile-first/PWA số hóa hành trình **xem menu → chọn tùy chọn → giỏ hàng → đặt đơn → thanh toán → theo dõi đơn**: tra cứu thực đơn, tùy chỉnh món, quản lý giỏ hàng, áp mã khuyến mãi, thanh toán qua ví điện tử hoặc thẻ mô phỏng, tự động tích điểm và theo dõi tiến độ đơn. Về kỹ thuật, hệ thống kiểm soát chặt máy trạng thái đơn hàng, thanh toán idempotent (Idempotency-Key) để không trừ tiền hai lần khi mạng chập chờn, và trừ tồn kho trong transaction ngay khi đơn hợp lệ.
+
+Hệ thống giải quyết ba bài toán cốt lõi: (1) rút ngắn thời gian chờ và loại bỏ sai sót khi ghi nhận đơn; (2) bảo đảm thanh toán an toàn, nhất quán; (3) minh bạch dữ liệu tồn kho, khuyến mãi và điểm thành viên cho cả khách hàng lẫn người quản lý.
 
 ## 2. Stakeholder
 
-| # | Stakeholder | Vai trò / mối quan tâm | Mục tiêu & kỳ vọng | Mức ảnh hưởng |
-|---|---|---|---|---|
-| S1 | **Khách hàng** (Customer) | Người dùng cuối, dùng điện thoại | Đặt món nhanh (< 2 phút), chọn đúng size/topping, biết chính xác tổng tiền trước khi trả, thanh toán không tiền mặt, biết khi nào đồ uống sẵn sàng, tích điểm thưởng | Cao |
-| S2 | **Nhân viên quầy** (Staff) | Pha chế, giao đồ uống | Nhận đơn rõ ràng (món, size, topping, ghi chú), cập nhật trạng thái đơn bằng 1 chạm, không phải thu tiền mặt | Cao |
-| S3 | **Quản lý cửa hàng** (Manager) | Chủ quán / quản lý ca | Kiểm soát menu, giá, khuyến mãi, tồn kho; xem lịch sử đơn; hệ thống chạy ổn định giờ cao điểm; chi phí vận hành thấp | Cao |
-| S4 | **Giảng viên / khách hàng nghiệm thu** | Đánh giá đồ án theo Assignment 2 | Tài liệu đầy đủ, truy vết được từ yêu cầu → thiết kế → code → test; hệ thống chạy được trên production có HTTPS; CI/CD hoạt động | Cao |
-| S5 | **Nhóm phát triển** | Sinh viên thực hiện | Phạm vi vừa đủ để hoàn thành trong 2 Sprint; công nghệ bắt buộc Next.js – NestJS – PostgreSQL – Docker; quy trình Git/PR rõ ràng | Trung bình |
-| S6 | **Đơn vị thanh toán** (Payment provider) | Ví điện tử / cổng thẻ (mô phỏng trong MVP) | Giao dịch có idempotency, không trừ tiền hai lần, dữ liệu thẻ không lưu trên hệ thống BrewLite | Trung bình |
+| # | Stakeholder | Mục tiêu và kỳ vọng chính | Mức ảnh hưởng |
+|---|---|---|---|
+| S1 | **Khách hàng** | Dễ dàng xem chi tiết, chọn món, tùy chỉnh size và topping, đặt đơn trên điện thoại. Biết rõ tổng tiền sau khuyến mãi trước khi trả; thanh toán điện tử an toàn, không bị trừ tiền trùng khi mạng lỗi; tích điểm thành viên và biết chính xác lúc đồ uống sẵn sàng tại quầy. | Cao |
+| S2 | **Nhân viên quầy** | Nhận danh sách đơn đã thanh toán với thông tin rõ ràng (tên món, size, topping, ghi chú) trên màn hình quầy; chuyển trạng thái pha chế bằng một lần chạm, giảm ghi chép thủ công và thu tiền mặt giờ cao điểm. | Cao |
+| S3 | **Quản lý cửa hàng** | Kiểm soát danh mục thực đơn, giá bán, điều kiện khuyến mãi và tồn kho được trừ tự động theo từng đơn; tra cứu lịch sử giao dịch để đối soát doanh thu; hệ thống ổn định với chi phí hạ tầng thấp. | Cao |
+| S4 | **Giảng viên / khách hàng nghiệm thu** | Đánh giá mức độ hoàn thiện và tính nhất quán của toàn bộ tạo phẩm: SRS, sơ đồ UML, kiến trúc, mã nguồn, kiểm thử tự động, CI/CD và phiên bản production truy cập ổn định qua HTTPS. | Cao |
+| S5 | **Nhóm phát triển** | Phân bổ hợp lý công việc trong hai Sprint với công nghệ bắt buộc Next.js, NestJS, PostgreSQL, Docker; chuẩn hóa quản lý mã nguồn qua Git, review Pull Request và chốt chặn kiểm thử tự động trên CI trước khi bàn giao. | Trung bình |
+| S6 | **Đơn vị thanh toán** (mô phỏng) | Xử lý yêu cầu thanh toán ví/thẻ nhất quán; bảo đảm tính idempotent bằng Idempotency-Key, không lưu dữ liệu thẻ nhạy cảm và trả kết quả giao dịch minh bạch cho máy chủ. | Trung bình |
 
 ## 3. Phạm vi
 
