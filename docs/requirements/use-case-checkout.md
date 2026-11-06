@@ -4,7 +4,7 @@
 |---|---|
 | Mã use-case | **UC-01** |
 | Tên | Đặt và thanh toán đơn hàng (Checkout) |
-| Phiên bản | 1.0 |
+| Phiên bản | 1.1 – bổ sung đặc tả use-case con theo góp ý của nhóm |
 | Mức | Mục tiêu người dùng (user goal) |
 | Yêu cầu liên quan | FR-03, FR-04, **FR-05, FR-06, FR-07, FR-08, FR-09**, FR-10, FR-14; NFR-01, NFR-02, NFR-04 |
 | Sơ đồ | [use-case-checkout.svg](../diagrams/use-case-checkout.svg) · [activity-checkout.svg](../diagrams/activity-checkout.svg) · [sequence-checkout.svg](../diagrams/sequence-checkout.svg) · bổ trợ: [activity-menu](../diagrams/activity-menu.svg), [activity-cart](../diagrams/activity-cart.svg), [activity-auth](../diagrams/activity-auth.svg), [activity-order-status](../diagrams/activity-order-status.svg), [sequence-auth](../diagrams/sequence-auth.svg), [sequence-staff-status](../diagrams/sequence-staff-status.svg) |
@@ -14,6 +14,65 @@
 ![UC-01](../diagrams/use-case-checkout.svg)
 
 Nguồn: [`use-case-checkout.puml`](../diagrams/use-case-checkout.puml)
+
+## 1a. Đặc tả các use-case con (UC-01.1 – UC-01.4)
+
+Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đây mô tả từng use-case con; luồng chi tiết của toàn bộ UC-01 nằm ở mục 3–5.
+
+### UC-01.1 – Đặt đơn hàng (kiểm tra và trừ tồn kho)
+
+| Mục | Nội dung |
+|---|---|
+| Actor | Khách hàng đã đăng nhập |
+| Trigger | Khách nhấn **"Đặt đơn & thanh toán"** trên màn hình thanh toán |
+| Tóm tắt | Tạo đơn hàng từ giỏ; hệ thống kiểm tra tồn kho, tính lại giá và trừ tồn kho trong một transaction |
+| Tiền điều kiện | 1. Khách đã đăng nhập (JWT còn hạn). 2. Giỏ hàng có ít nhất một sản phẩm hợp lệ |
+| Luồng chính | 1. Khách chọn "Đặt đơn" trên giỏ hàng, hệ thống hiển thị màn hình thanh toán.<br>2. Khách có thể nhập mã khuyến mãi (extend "Áp dụng mã khuyến mãi").<br>3. Khách nhấn "Đặt đơn & thanh toán".<br>4. Hệ thống kiểm tra JWT và dữ liệu, kiểm tra tồn kho và tính lại tổng tiền ở server.<br>5. Trong một transaction: trừ tồn kho, sinh mã đơn BL-XXXXX ở trạng thái PENDING và lưu vào cơ sở dữ liệu.<br>6. Hệ thống chuyển sang bước thanh toán (UC-01.2) |
+| Luồng thay thế | 2a. Mã khuyến mãi không hợp lệ: hiển thị lý do, đơn tính không giảm giá, quay lại bước 3 |
+| Luồng ngoại lệ | 4a. Phiên đăng nhập hết hạn → 401, chuyển tới trang đăng nhập, giỏ hàng được giữ (include "Đăng nhập").<br>4b. Dữ liệu không hợp lệ → 400, hiển thị lỗi theo trường.<br>4c. Không đủ tồn kho → 422 "Món X chỉ còn N phần", rollback, không tạo đơn, quay lại giỏ |
+| Hậu điều kiện | Đơn được tạo với trạng thái PENDING; tồn kho các sản phẩm giảm đúng số lượng |
+| Yêu cầu liên quan | FR-05, FR-06, FR-07; NFR-02 |
+
+### UC-01.2 – Thanh toán đơn hàng
+
+| Mục | Nội dung |
+|---|---|
+| Actor | Khách hàng đã đăng nhập; Dịch vụ thanh toán (mô phỏng) |
+| Trigger | Đơn vừa được tạo ở UC-01.1, hoặc khách nhấn "Thử thanh toán lại" |
+| Tóm tắt | Thanh toán đơn bằng ví điện tử hoặc thẻ mô phỏng, có khóa chống trùng lặp (Idempotency-Key) |
+| Tiền điều kiện | 1. Khách đã đăng nhập. 2. Đơn thuộc về khách và đang ở trạng thái PENDING |
+| Luồng chính | 1. Khách chọn phương thức thanh toán (Ví điện tử hoặc Thẻ).<br>2. Hệ thống sinh Idempotency-Key và gửi yêu cầu `POST /payments` sang dịch vụ thanh toán mô phỏng.<br>3. Dịch vụ thanh toán trả kết quả thành công.<br>4. Hệ thống lưu giao dịch SUCCEEDED và cập nhật đơn thành PAID.<br>5. Hệ thống tích điểm thành viên (include "Tích điểm thành viên": 1 điểm / 10.000đ).<br>6. Hệ thống hiển thị "Thanh toán thành công" kèm mã đơn |
+| Luồng thay thế | 2a. Client gửi lại cùng Idempotency-Key (mạng chập chờn) → hệ thống trả lại kết quả giao dịch cũ, không trừ tiền lần hai |
+| Luồng ngoại lệ | 3a. Giao dịch bị từ chối → lưu giao dịch FAILED, đơn vẫn PENDING, hiển thị "Ngân hàng từ chối giao dịch"; khách có thể "Thanh toán lại" (extend) với Idempotency-Key mới hoặc hủy đơn (UC-01.3).<br>3b. Đơn không thuộc khách → 403; đơn không còn PENDING → 400 |
+| Hậu điều kiện | Đơn ở trạng thái PAID; giao dịch thanh toán và điểm thành viên được ghi nhận |
+| Yêu cầu liên quan | FR-08, FR-09, FR-10, FR-14; NFR-02 |
+
+### UC-01.3 – Hủy đơn chờ thanh toán
+
+| Mục | Nội dung |
+|---|---|
+| Actor | Khách hàng đã đăng nhập |
+| Trigger | Khách nhấn "Hủy đơn" trên trang chi tiết đơn |
+| Tóm tắt | Khách chủ động hủy đơn chưa thanh toán để hoàn lại tồn kho |
+| Tiền điều kiện | 1. Khách đã đăng nhập. 2. Đơn thuộc về khách và đang ở trạng thái PENDING |
+| Luồng chính | 1. Khách chọn "Hủy đơn".<br>2. Hệ thống hiển thị hộp thoại xác nhận.<br>3. Khách xác nhận.<br>4. Hệ thống cập nhật đơn thành CANCELLED và hoàn trả tồn kho cho các sản phẩm trong đơn.<br>5. Hệ thống hiển thị trạng thái "Đã hủy" |
+| Luồng thay thế | 2a. Khách chọn "Không" hoặc đóng hộp thoại → giữ nguyên đơn |
+| Luồng ngoại lệ | 4a. Đơn đã thanh toán → 400, không hủy được. 4b. Đơn của người khác → 403 |
+| Hậu điều kiện | Đơn ở trạng thái CANCELLED; tồn kho được khôi phục |
+| Yêu cầu liên quan | FR-12 |
+
+### UC-01.4 – Theo dõi trạng thái đơn hàng
+
+| Mục | Nội dung |
+|---|---|
+| Actor | Khách hàng đã đăng nhập |
+| Trigger | Khách mở trang chi tiết đơn hoặc lịch sử đơn |
+| Tóm tắt | Khách xem tiến độ xử lý đơn theo thời gian thực |
+| Tiền điều kiện | Khách đã đăng nhập và có ít nhất một đơn |
+| Luồng chính | 1. Khách mở chi tiết đơn hoặc lịch sử đơn (`GET /orders/me`).<br>2. Hệ thống trả thông tin và trạng thái hiện tại của đơn.<br>3. Giao diện hiển thị trạng thái (PENDING, PAID, PREPARING, READY, COMPLETED hoặc CANCELLED) trên thanh tiến trình.<br>4. Giao diện tự làm mới mỗi 10 giây khi đơn chưa hoàn tất, để thấy thay đổi do nhân viên quầy cập nhật |
+| Luồng ngoại lệ | 2a. Xem đơn của người khác → 403 và màn hình lỗi |
+| Hậu điều kiện | Khách biết chính xác tiến độ xử lý đơn tại quán |
+| Yêu cầu liên quan | FR-10, FR-11, FR-13 |
 
 ## 2. Mô tả tổng quan
 

@@ -3,16 +3,15 @@
 skinparam ActivityBackgroundColor #FBF7F2
 skinparam ActivityBorderColor #8A5733
 skinparam ActivityDiamondBackgroundColor #F3E9DC
-
 |Khách hàng|
 start
 :Mở /login (trực tiếp hoặc bị chuyển hướng ?next=);
 if (Đã có tài khoản?) then (chưa)
   :Chọn "Đăng ký";
-  :Nhập họ tên, email, mật khẩu, SĐT (tùy chọn);
+  :Nhập họ tên, email, mật khẩu;
   |Next.js UI|
   :Validate client: email hợp lệ, mật khẩu ≥ 8 ký tự,
-  họ tên ≥ 2 ký tự, SĐT 10 số;
+    họ tên ≥ 2 ký tự;
   if (Hợp lệ?) then (không)
     :Hiển thị lỗi dưới từng trường;
     stop
@@ -26,6 +25,7 @@ if (Đã có tài khoản?) then (chưa)
     :Hiển thị lỗi server;
     stop
   endif
+  |NestJS API|
   :Tìm user theo email (lowercase);
   if (Email đã tồn tại?) then (có)
     :409 "Email đã được sử dụng";
@@ -33,6 +33,7 @@ if (Đã có tài khoản?) then (chưa)
     :Hiển thị lỗi;
     stop
   endif
+  |NestJS API|
   :bcrypt.hash(password, 10);
   :INSERT users (role = CUSTOMER);
 else (rồi)
@@ -44,7 +45,7 @@ else (rồi)
   :Tìm user kèm passwordHash;
   if (User tồn tại và bcrypt.compare đúng?) then (không)
     :401 "Email hoặc mật khẩu không đúng"
-    (cùng thông báo cho cả 2 trường hợp);
+      (cùng thông báo cho cả 2 trường hợp);
     |Next.js UI|
     :Hiển thị lỗi;
     stop
@@ -59,10 +60,9 @@ endif
 |Khách hàng|
 :Tiếp tục đặt đơn / xem lịch sử;
 stop
-
 note right
-  Khi API trả 401 ở bất kỳ màn hình nào
-  (token hết hạn): client phát sự kiện
-  "unauthorized" → xóa phiên → về /login?next=…
+Khi API trả 401 ở bất kỳ màn hình nào
+(token hết hạn): client phát sự kiện
+"unauthorized" → xóa phiên → về /login?next=…
 end note
 @enduml

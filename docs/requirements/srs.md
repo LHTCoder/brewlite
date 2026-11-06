@@ -85,7 +85,7 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
 | **FR-10** | Sau khi thanh toán, khách xem màn hình xác nhận (mã đơn, tổng tiền, các món) và trạng thái hiện tại của đơn; trạng thái tự làm mới khi đơn đang xử lý. | Must | AC-10.1 Màn hình `/orders/:id?paid=1` hiển thị khối "Đặt hàng thành công" với mã `BL-…`. AC-10.2 Thanh tiến trình thể hiện PAID → PREPARING → READY → COMPLETED theo `status`. AC-10.3 Trang tự gọi lại API mỗi 10s khi `status ∉ {COMPLETED, CANCELLED}`. AC-10.4 Khách xem đơn của người khác → 403 và màn hình lỗi. |
-| **FR-11** | Khách xem lịch sử các đơn của mình, mới nhất trước, gồm mã, thời gian, trạng thái, số món, tổng tiền. | Must | AC-11.1 `GET /orders` trả đơn của chính user, sắp theo `createdAt` giảm dần. AC-11.2 Chưa có đơn → trạng thái rỗng "Chưa có đơn hàng". |
+| **FR-11** | Khách xem lịch sử các đơn của mình, mới nhất trước, gồm mã, thời gian, trạng thái, số món, tổng tiền. | Must | AC-11.1 `GET /orders/me` (tương đương `GET /orders`) trả đơn của chính user, sắp theo `createdAt` giảm dần. AC-11.2 Chưa có đơn → trạng thái rỗng "Chưa có đơn hàng". |
 | **FR-12** | Khách hủy đơn khi còn PENDING; hệ thống hoàn tồn kho. | Should | AC-12.1 `POST /orders/:id/cancel` đơn PENDING → 201 `status=CANCELLED`, tồn kho các món được cộng lại đúng số lượng. AC-12.2 Đơn đã PAID trở đi khách không hủy được → 400. |
 
 ### 3.7 Quản lý trạng thái đơn (quầy)

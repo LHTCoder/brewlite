@@ -8,43 +8,29 @@ skinparam usecase {
 }
 
 actor "Khách hàng\nđã đăng nhập" as Customer
-actor "Payment Service\n(Ví / Thẻ mô phỏng)" as Pay <<system>>
-actor "Nhân viên quầy" as Staff
+actor "Dịch vụ thanh toán\n(mô phỏng)" as Pay <<system>>
 
-rectangle "BrewLite – Checkout" {
-  usecase "UC-01 Đặt và thanh toán\nđơn hàng" as UC1 #F3E9DC
-  usecase "UC-01.1 Áp dụng mã\nkhuyến mãi" as UC11
-  usecase "UC-01.2 Kiểm tra tồn kho\n& tính giá" as UC12
-  usecase "UC-01.3 Tạo đơn hàng\n(PENDING)" as UC13
-  usecase "UC-01.4 Thanh toán\n(idempotent)" as UC14
-  usecase "UC-01.5 Tích điểm thưởng" as UC15
-  usecase "UC-06 Đăng nhập" as UC6
-  usecase "UC-09 Hủy đơn\nchưa thanh toán" as UC9
-  usecase "UC-07 Theo dõi\ntrạng thái đơn" as UC7
+rectangle "UC-01 Đặt và thanh toán đơn hàng" {
+  usecase "UC-01.1 Đặt đơn hàng\n(kiểm tra & trừ tồn kho)" as UC11 #F3E9DC
+  usecase "UC-01.2 Thanh toán đơn hàng\n(Ví điện tử / Thẻ mô phỏng)" as UC12 #F3E9DC
+  usecase "UC-01.3 Hủy đơn\nchờ thanh toán" as UC13
+  usecase "UC-01.4 Theo dõi\ntrạng thái đơn hàng" as UC14
+  usecase "Áp dụng mã\nkhuyến mãi" as Promo
+  usecase "Đăng nhập" as Login
+  usecase "Tích điểm\nthành viên" as Points
+  usecase "Thanh toán lại\n(khi giao dịch bị từ chối)" as Retry
 }
 
-Customer --> UC1
-Customer --> UC9
-Customer --> UC7
+Customer -- UC11
+Customer -- UC12
+Customer -- UC13
+Customer -- UC14
 
-UC1 .> UC6 : <<include>>\n(PRE-1)
-UC1 .> UC12 : <<include>>
-UC1 .> UC13 : <<include>>
-UC1 .> UC14 : <<include>>
-UC11 .> UC1 : <<extend>>\n[có mã KM]
-UC15 .> UC14 : <<extend>>\n[thanh toán thành công]
-UC9 .> UC14 : <<extend>>\n[thanh toán thất bại]
-UC7 .> UC1 : <<extend>>\n[sau xác nhận]
+UC11 .> Login : <<include>>
+Promo .> UC11 : <<extend>>
+UC12 .> Points : <<include>>
+Retry .> UC12 : <<extend>>
 
-UC14 --> Pay
-UC13 ..> Staff : đơn PAID xuất hiện\ntrên màn hình quầy
-
-note right of UC12
-  FR-05 Kiểm tra tồn kho (FOR UPDATE)
-  FR-06 Server tính lại giá
-end note
-note right of UC14
-  FR-08 Ví/Thẻ mô phỏng
-  FR-09 Idempotency key
-end note
+UC12 -- Pay
+Retry -- Pay
 @enduml

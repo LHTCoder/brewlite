@@ -3,44 +3,37 @@
 skinparam ActivityBackgroundColor #FBF7F2
 skinparam ActivityBorderColor #8A5733
 skinparam ActivityDiamondBackgroundColor #F3E9DC
-
 |Khách hàng|
 start
 :Mở ứng dụng / trang chủ;
 |Next.js UI|
 :Hiển thị skeleton (loading);
-:GET /products;
-|NestJS API|
-:Truy vấn products (is_available = true)
-join sizes, toppings;
-|Next.js UI|
-if (Phản hồi?) then (lỗi mạng / 5xx)
-  :Hiển thị Error state + nút "Thử lại";
-  |Khách hàng|
-  :Nhấn "Thử lại";
-  |Next.js UI|
+repeat
   :GET /products;
-  detach
-elseif (Mảng rỗng?) then (rỗng)
+  |NestJS API|
+  :Truy vấn products (is_available = true)
+    join sizes, toppings;
+  |Next.js UI|
+backward :Hiển thị Error state + nút "Thử lại" – khách nhấn "Thử lại";
+repeat while (Lỗi mạng / 5xx?) is (có) not (200)
+if (Mảng rỗng?) then (rỗng)
   :Hiển thị Empty state "Menu đang trống";
   stop
 else (có dữ liệu)
   :Hiển thị lưới sản phẩm theo danh mục;
 endif
-
 |Khách hàng|
 repeat
   :Chọn tab danh mục / gõ từ khóa;
   |Next.js UI|
   :Lọc danh sách phía client;
-  if (Không còn món phù hợp?) then (đúng)
+  if (Không còn món phù hợp?) then (có)
     :Empty state "Không tìm thấy món";
-  else (có)
+  else (không)
     :Cập nhật lưới sản phẩm;
   endif
   |Khách hàng|
 repeat while (Đã thấy món muốn mua?) is (chưa) not (rồi)
-
 :Chạm vào thẻ sản phẩm;
 |Next.js UI|
 :GET /products/:id;
@@ -51,6 +44,7 @@ if (id hợp lệ & tồn tại?) then (không)
   :Hiển thị lỗi "Sản phẩm không tồn tại";
   stop
 else (có)
+  |NestJS API|
   :Trả chi tiết: mô tả, giá, sizes, toppings, stock;
 endif
 |Next.js UI|

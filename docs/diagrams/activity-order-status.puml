@@ -3,10 +3,9 @@
 skinparam ActivityBackgroundColor #FBF7F2
 skinparam ActivityBorderColor #8A5733
 skinparam ActivityDiamondBackgroundColor #F3E9DC
-
 |Khách hàng|
 start
-:Sau thanh toán → /orders/:id?paid=1;
+:Mở /orders/:id (sau thanh toán ?paid=1 hoặc từ lịch sử đơn);
 |Next.js UI|
 :GET /orders/:id;
 |NestJS API|
@@ -15,10 +14,22 @@ if (Đơn thuộc khách hoặc actor là STAFF/MANAGER?) then (không)
   |Next.js UI|
   :Error state;
   stop
+else (có)
 endif
+|NestJS API|
 :Trả Order + items + payment;
 |Next.js UI|
 :Hiển thị xác nhận, mã BL-XXXXX, thanh tiến trình;
+if (Đơn còn PENDING (chưa thanh toán)?) then (có)
+  |Khách hàng|
+  :Nhấn "Hủy đơn";
+  |NestJS API|
+  :PENDING → CANCELLED; hoàn tồn kho (increment stock);
+  |Next.js UI|
+  :Cập nhật StatusBadge "Đã hủy" (FR-12);
+  stop
+else (không)
+endif
 fork
   |Next.js UI|
   repeat
@@ -38,11 +49,13 @@ fork again
   :PATCH /orders/:id/status {PREPARING};
   |NestJS API|
   :JwtAuthGuard + @Roles(STAFF, MANAGER);
+  note right: Nhân viên cũng có thể hủy đơn PAID → CANCELLED (hoàn tồn kho), xem State-01
   if (Chuyển trạng thái hợp lệ theo ORDER_TRANSITIONS?) then (không)
     :400 "Không thể chuyển trạng thái";
     |Next.js UI|
     :Toast lỗi;
   else (có)
+    |NestJS API|
     :UPDATE orders SET status; log;
     |Next.js UI|
     :Toast "BL-… → PREPARING";
@@ -50,7 +63,7 @@ fork again
   |Nhân viên quầy|
   :Pha chế xong → nhấn "Đã xong – gọi khách";
   |NestJS API|
-  :PAID→PREPARING→READY (kiểm tra máy trạng thái);
+  :PREPARING → READY (kiểm tra máy trạng thái);
   |Khách hàng|
   :Thấy trạng thái "Sẵn sàng nhận" → đến quầy đọc mã;
   |Nhân viên quầy|
@@ -59,11 +72,5 @@ fork again
   :READY → COMPLETED;
 end fork
 |Khách hàng|
-if (Đơn còn PENDING (chưa thanh toán)?) then (có)
-  :Nhấn "Hủy đơn";
-  |NestJS API|
-  :PENDING → CANCELLED; hoàn tồn kho (increment stock);
-  |Khách hàng|
-endif
 stop
 @enduml
