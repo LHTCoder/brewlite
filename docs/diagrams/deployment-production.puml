@@ -1,0 +1,108 @@
+@startuml deployment-production
+' Deployment-01: Môi trường production thực tế trên Render.com (Task 3.2)
+' Mỗi node/artifact truy vết tới thành phần trong docs/architecture/architecture.md và mã nguồn
+skinparam node {
+  BackgroundColor #FBF7F2
+  BorderColor #8A5733
+}
+skinparam database {
+  BackgroundColor #F3E9DC
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #C08C5F
+}
+skinparam componentStyle rectangle
+top to bottom direction
+
+rectangle "Ranh giới LOCAL (máy dev)" as LOCAL #EEEEEE {
+  node "Laptop dev" <<device>> as DEV {
+    rectangle "docker-compose.yml" as DC
+    artifact "web :3000" as LW
+    artifact "api :4000" as LA
+    database "postgres:16 :5432\n(volume pgdata)" as LDB
+    DC -- LW
+    DC -- LA
+    DC -- LDB
+  }
+}
+
+rectangle "Ranh giới CI (GitHub)" as CI #E8F0FE {
+  node "GitHub" <<cloud>> as GH {
+    artifact "Repository\nbrewlite (main, PR)" as REPO
+    node "GitHub Actions runner" <<execution env>> as RUNNER {
+      component "ci.yml\nInstall→Lint→Test→Build" as CIW
+      component "cd.yml\nBuild image → Push → Deploy → Smoke" as CDW
+    }
+    database "GitHub Secrets\nRENDER_DEPLOY_HOOK_*\nRENDER_API_URL..." as SECRETS
+    node "GitHub Container Registry\nghcr.io/<org>/brewlite-api:<sha>\nghcr.io/<org>/brewlite-web:<sha>" <<registry>> as GHCR
+  }
+}
+
+rectangle "Ranh giới PRODUCTION (Render.com, region Singapore)" as PROD #E6F4EA {
+  node "Render Edge / Load balancer\n(TLS tự động, Let's Encrypt)" <<CDN/LB>> as EDGE
+
+  node "Web Service: brewlite-web" <<Docker container>> as WEBSVC {
+    artifact "Next.js standalone\nnode server.js :3000" as WEB
+    rectangle "Env: NEXT_PUBLIC_API_URL\n(build-arg)" as WENV
+  }
+
+  node "Web Service: brewlite-api" <<Docker container>> as APISVC {
+    artifact "NestJS dist/main.js :4000\n(entrypoint: migrate → seed? → start)" as API
+    rectangle "Env (Render Secret):\nDATABASE_URL, JWT_SECRET,\nCORS_ORIGINS, APP_VERSION" as AENV
+    component "GET /health\n(Render health check path)" as HC
+    component "Logger → stdout\n(Render Logs)" as LOG
+  }
+
+  node "Render PostgreSQL 16\n(managed, private network)" <<DBMS>> as PGSVC {
+    database "brewlite DB\nPersistent disk (SSD)\nDaily backup" as PG
+  }
+
+  component "Payment Service\n(module mô phỏng trong API –\nthay bằng MoMo/VNPay adapter sau)" as PAYSVC
+}
+
+node "Thiết bị khách hàng\n(iOS / Android / Desktop)" <<device>> as CLIENT {
+  artifact "Trình duyệt + PWA BrewLite\n(service worker, localStorage)" as BROWSER
+}
+
+node "Thiết bị quầy\n(tablet)" <<device>> as STAFFDEV {
+  artifact "Trình duyệt – /staff" as STAFFUI
+}
+
+' ---- Luồng CI/CD ----
+DEV -right-> REPO : git push / Pull Request\n(HTTPS)
+REPO --> CIW : trigger on PR
+REPO --> CDW : trigger on push main / tag v*
+CDW --> GHCR : docker push\n(GITHUB_TOKEN)
+SECRETS ..> CDW : inject secrets
+CDW --> WEBSVC : POST deploy hook\n(imgURL=ghcr.io/...:sha) HTTPS
+CDW --> APISVC : POST deploy hook\n(imgURL=ghcr.io/...:sha) HTTPS
+GHCR --> WEBSVC : pull image
+GHCR --> APISVC : pull image
+CDW ..> HC : smoke test GET https://api.../health\n(sau deploy; fail → dừng pipeline, rollback)
+
+' ---- Luồng runtime ----
+BROWSER --> EDGE : HTTPS :443
+STAFFUI --> EDGE : HTTPS :443
+EDGE --> WEB : HTTP :3000 (nội bộ)
+BROWSER --> EDGE : HTTPS :443\nAPI JSON (CORS origin = web)
+EDGE --> API : HTTP :4000 (nội bộ)
+API --> PG : TCP :5432 (TLS, private network,\nkhông public)
+API --> PAYSVC : charge()
+EDGE ..> HC : health check định kỳ
+
+note bottom of PGSVC
+  DB không có public IP; chỉ các service
+  trong cùng Render account truy cập qua
+  Internal Database URL.
+end note
+note bottom of SECRETS
+  Secret không nằm trong repo hay log CI;
+  GitHub tự ẩn giá trị secret trong log.
+end note
+note top of EDGE
+  Render cấp *.onrender.com + chứng chỉ TLS;
+  web: https://brewlite-web.onrender.com
+  api: https://brewlite-api.onrender.com
+end note
+@enduml
