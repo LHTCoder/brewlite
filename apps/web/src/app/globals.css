@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-cream text-brew-900 antialiased;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brew-600 px-4 py-3 font-semibold text-white shadow-card transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brew-200 bg-white px-4 py-3 font-semibold text-brew-800 transition active:scale-[.98] disabled:opacity-50;
+  }
+  .input {
+    @apply w-full rounded-xl border border-brew-200 bg-white px-4 py-3 text-base outline-none transition focus:border-brew-500 focus:ring-2 focus:ring-brew-200;
+  }
+  .card {
+    @apply rounded-2xl bg-white p-4 shadow-card;
+  }
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-brew-100;
+  }
+}
