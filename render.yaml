@@ -1,0 +1,50 @@
+# Render Blueprint – tạo toàn bộ hạ tầng production bằng 1 lần "New → Blueprint" (tùy chọn).
+# Service kiểu image-backed: CD push image lên GHCR rồi gọi Deploy Hook với imgURL=<tag SHA> (ADR-007).
+# Sau khi tạo, bật Deploy Hook cho từng service và lưu vào GitHub Secrets (xem docs/deployment.md).
+databases:
+  - name: brewlite-db
+    plan: free
+    region: singapore
+    databaseName: brewlite
+    user: brewlite
+
+services:
+  - type: web
+    name: brewlite-api
+    runtime: image
+    image:
+      url: ghcr.io/LHTCoder/brewlite-api:latest # package GHCR để public (hoặc thêm Registry Credential)
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: brewlite-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true # Render sinh secret ngẫu nhiên, không nằm trong repo
+      - key: JWT_EXPIRES_IN
+        value: 1d
+      - key: CORS_ORIGINS
+        value: https://brewlite-web.onrender.com
+      - key: SEED_ON_START
+        value: 'true'
+      - key: SWAGGER_ENABLED
+        value: 'true'
+
+  - type: web
+    name: brewlite-web
+    runtime: image
+    image:
+      url: ghcr.io/LHTCoder/brewlite-web:latest
+    region: singapore
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        value: https://brewlite-api.onrender.com

@@ -1,0 +1,36 @@
+# Rollback production về một image tag đã chạy ổn định (Task 5.3 mục 7)
+name: Rollback production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Tag image cần quay về (12 ký tự SHA, ví dụ 3f2a1b9c0d4e, hoặc 1.0.0)'
+        required: true
+      service:
+        description: 'Service cần rollback'
+        type: choice
+        options: [both, api, web]
+        default: both
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      IMAGE_API: ghcr.io/${{ github.repository_owner }}/brewlite-api
+      IMAGE_WEB: ghcr.io/${{ github.repository_owner }}/brewlite-web
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rollback API
+        if: inputs.service == 'both' || inputs.service == 'api'
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_API }}&imgURL=${{ env.IMAGE_API }}:${{ inputs.image_tag }}"
+      - name: Rollback Web
+        if: inputs.service == 'both' || inputs.service == 'web'
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_WEB }}&imgURL=${{ env.IMAGE_WEB }}:${{ inputs.image_tag }}"
+      - name: Smoke test sau rollback
+        env:
+          API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          WEB_URL: ${{ secrets.PRODUCTION_WEB_URL }}
+          EXPECTED_VERSION: ${{ inputs.image_tag }}
+        run: bash scripts/smoke-test.sh
