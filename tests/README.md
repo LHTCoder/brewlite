@@ -16,6 +16,6 @@ npm run e2e                             # hoặc npm run e2e:headed
 npm run e2e:report                      # xem báo cáo HTML
 ```
 
-Chạy với production: `WEB_URL=https://brewlite-web.onrender.com API_URL=https://brewlite-api.onrender.com npm run e2e`
+Chạy với production: `WEB_URL=https://brewlite-web-00zk.onrender.com API_URL=https://brewlite-api-t8xs.onrender.com npm run e2e`
 
 Mapping test ↔ yêu cầu: xem [docs/traceability-matrix.md](../docs/traceability-matrix.md).

@@ -8,9 +8,9 @@ Sơ đồ: [deployment-production.svg](./diagrams/deployment-production.svg) · 
 |---|---|---|---|---|
 | **Local (dev)** | http://localhost:3000 | http://localhost:4000 (Swagger `/docs`) | Postgres trong Docker (`db`) | `docker compose up --build` hoặc `npm run dev` từng app |
 | **CI** (GitHub Actions) | build | lint + unit + integration (Postgres service) + build | `postgres:16` service container | tự động khi mở PR |
-| **Production** (Render) | `https://brewlite-web.onrender.com` | `https://brewlite-api.onrender.com` (`/health`) | Render PostgreSQL (private) | tự động khi push `main` / tag `v*` |
+| **Production** (Render) | `https://brewlite-web-00zk.onrender.com` | `https://brewlite-api-t8xs.onrender.com` (`/health`) | Render PostgreSQL (private) | tự động khi push `main` / tag `v*` |
 
-> Thay `brewlite-web` / `brewlite-api` bằng tên service thực tế của nhóm. Ghi URL thật vào README mục "Production".
+> Render tự thêm hậu tố ngẫu nhiên vào subdomain khi tên đã có người dùng (ở đây `-00zk`, `-t8xs`). URL thật cũng được khai báo trong GitHub → Settings → Variables (`PRODUCTION_WEB_URL`, `PRODUCTION_API_URL`) để CD build web và chạy smoke test.
 
 ## 2. Thiết lập production trên Render (làm một lần)
 
@@ -18,7 +18,7 @@ Sơ đồ: [deployment-production.svg](./diagrams/deployment-production.svg) · 
 2. **Database:** *New → PostgreSQL* → tên `brewlite-db`, region Singapore, plan Free. Copy **Internal Database URL** (dạng `postgresql://user:pass@host/brewlite`). DB này không có public IP → thỏa yêu cầu "database production không public".
 3. **API:** *New → Web Service → Deploy an existing image* → image `ghcr.io/lhtcoder/brewlite-api:latest` (lần đầu có thể chọn *Build from repo* với Dockerfile `apps/api/Dockerfile`, root `apps/api`). Cấu hình:
    - Port `4000`; Health Check Path `/health`.
-   - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (lần đầu, sau đó đặt `false`), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
+   - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web-00zk.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (lần đầu, sau đó đặt `false`), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
    - Settings → **Deploy Hook** → copy URL → lưu vào GitHub Secret `RENDER_DEPLOY_HOOK_API`.
 4. **Web:** tương tự với image `ghcr.io/lhtcoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → CD lấy từ GitHub Variable `PRODUCTION_API_URL` và truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
 5. Nếu dùng image private trên GHCR: Render → *Account Settings → Registry Credentials* thêm GHCR với GitHub PAT (`read:packages`). Đơn giản hơn: đặt package **public** trên GitHub (Packages → Package settings → Change visibility).

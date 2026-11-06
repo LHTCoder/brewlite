@@ -31,7 +31,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 1d
       - key: CORS_ORIGINS
-        value: https://brewlite-web.onrender.com
+        value: https://brewlite-web-00zk.onrender.com
       - key: SEED_ON_START
         value: 'true'
       - key: SWAGGER_ENABLED
@@ -47,4 +47,4 @@ services:
     healthCheckPath: /
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: https://brewlite-api.onrender.com
+        value: https://brewlite-api-t8xs.onrender.com

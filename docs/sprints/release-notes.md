@@ -1,6 +1,8 @@
 # BrewLite v1.0.0 – Release Notes
 
-**Ngày phát hành:** (điền) · **Tag:** `v1.0.0` · **Image:** `ghcr.io/lhtcoder/brewlite-api:1.0.0`, `ghcr.io/lhtcoder/brewlite-web:1.0.0`
+**Ngày phát hành:** 06/11/2026 · **Tag:** `v1.0.0` · **Image:** `ghcr.io/lhtcoder/brewlite-api:1.0.0`, `ghcr.io/lhtcoder/brewlite-web:1.0.0`
+
+**Production:** Web https://brewlite-web-00zk.onrender.com · API https://brewlite-api-t8xs.onrender.com (`/health`, `/docs`)
 
 ## Tính năng
 - 🧋 Menu mobile-first theo danh mục, tìm món, chi tiết với size S/M/L và topping, hiển thị hết hàng.
