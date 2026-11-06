@@ -13,7 +13,7 @@ services:
     name: brewlite-api
     runtime: image
     image:
-      url: ghcr.io/LHTCoder/brewlite-api:latest # package GHCR để public (hoặc thêm Registry Credential)
+      url: ghcr.io/lhtcoder/brewlite-api:latest # package GHCR để public (hoặc thêm Registry Credential)
     region: singapore
     plan: free
     healthCheckPath: /health
@@ -41,7 +41,7 @@ services:
     name: brewlite-web
     runtime: image
     image:
-      url: ghcr.io/LHTCoder/brewlite-web:latest
+      url: ghcr.io/lhtcoder/brewlite-web:latest
     region: singapore
     plan: free
     healthCheckPath: /
