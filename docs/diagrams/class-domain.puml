@@ -1,6 +1,7 @@
 @startuml class-domain
 ' Class-01: Mô hình miền BrewLite (Task 2.3) – khớp với entity TypeORM trong apps/api/src
 skinparam classAttributeIconSize 0
+skinparam linetype polyline
 skinparam class {
   BackgroundColor #FBF7F2
   BorderColor #8A5733
@@ -58,6 +59,10 @@ class User {
   +loyaltyPoints : int = 0
   +createdAt : DateTime
   +updatedAt : DateTime
+  --
+  +register() : User
+  +validatePassword(plain : String) : boolean
+  +addLoyaltyPoints(points : int) : void
 }
 
 class Product {
@@ -71,12 +76,18 @@ class Product {
   +stock : int = 0
   +createdAt : DateTime
   +updatedAt : DateTime
+  --
+  +hasSufficientStock(qty : int) : boolean
+  +deductStock(qty : int) : void
+  +restoreStock(qty : int) : void
 }
 
 class ProductSize {
   +id : UUID
   +name : String  <<S|M|L>>
   +extraPrice : int = 0
+  --
+  +getExtraPrice() : int
 }
 
 class Topping {
@@ -84,6 +95,8 @@ class Topping {
   +name : String
   +price : int
   +isAvailable : boolean = true
+  --
+  +checkAvailable() : boolean
 }
 
 class Order {
@@ -98,6 +111,9 @@ class Order {
   +updatedAt : DateTime
   --
   +canTransitionTo(next : OrderStatus) : boolean
+  +calculateSubtotal() : int
+  +markAsPaid() : void
+  +cancelPendingOrder() : void
 }
 
 class OrderItem {
@@ -108,6 +124,9 @@ class OrderItem {
   +unitPrice : int
   +quantity : int  <<1..20>>
   +lineTotal : int
+  --
+  +computeUnitPrice(basePrice : int) : int
+  +computeLineTotal() : int
 }
 
 class Payment {
@@ -120,6 +139,9 @@ class Payment {
   +failureReason : String?
   +createdAt : DateTime
   +updatedAt : DateTime
+  --
+  +isIdempotentHit(key : String) : boolean
+  +processCharge() : PaymentStatus
 }
 
 class Promotion {
@@ -135,6 +157,7 @@ class Promotion {
   +endsAt : DateTime?
   --
   +computeDiscount(subtotal : int) : int
+  +isEligible(subtotal : int) : boolean
 }
 
 class LoyaltyTransaction {
@@ -143,6 +166,8 @@ class LoyaltyTransaction {
   +points : int  <<+EARN / −REDEEM>>
   +description : String?
   +createdAt : DateTime
+  --
+  +calculatePoints(paidAmount : int) : int
 }
 
 ' ---- Quan hệ & multiplicity ----
@@ -156,12 +181,12 @@ Product "1" *-- "0..*" ProductSize : có size >
 Product "0..*" -- "0..*" Topping : cho phép >
 LoyaltyTransaction "0..*" -- "0..1" Order : phát sinh từ >
 
-User ..> UserRole
-Product ..> ProductCategory
-Order ..> OrderStatus
-Payment ..> PaymentMethod
-Payment ..> PaymentStatus
-Promotion ..> PromotionType
-LoyaltyTransaction ..> LoyaltyTransactionType
+User -- UserRole
+Product -- ProductCategory
+Order -- OrderStatus
+Payment -- PaymentMethod
+Payment -- PaymentStatus
+Promotion -- PromotionType
+LoyaltyTransaction -- LoyaltyTransactionType
 
 @enduml

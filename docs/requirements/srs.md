@@ -4,7 +4,7 @@
 |---|---|
 | Phiên bản | 1.0 |
 | Chuẩn tham chiếu | IEEE 830 (rút gọn), MoSCoW |
-| Liên quan | [Bối cảnh & phạm vi](./context-and-scope.md) · [UC-01 Đặt & thanh toán](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
+| Liên quan | [Bối cảnh & phạm vi](./context-and-scope.md) · [UC-10 Đặt & thanh toán](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
 
 ## 1. Giới thiệu
 
@@ -36,11 +36,11 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 
 | Actor | Use-case |
 |---|---|
-| Khách hàng (chưa đăng nhập) | UC-02 Xem menu, UC-03 Xem chi tiết sản phẩm, UC-04 Quản lý giỏ hàng, UC-05 Đăng ký, UC-06 Đăng nhập |
-| Khách hàng (đã đăng nhập) | UC-01 Đặt và thanh toán đơn hàng, UC-07 Theo dõi trạng thái đơn, UC-08 Xem lịch sử đơn, UC-09 Hủy đơn chưa thanh toán, UC-10 Xem điểm thưởng |
-| Nhân viên quầy | UC-11 Xem đơn cần xử lý, UC-12 Cập nhật trạng thái đơn |
-| Quản lý | UC-11, UC-12 (kế thừa nhân viên), UC-13 Quản lý menu/khuyến mãi (Could – qua seed/SQL trong MVP) |
-| Payment Service (hệ thống ngoài) | Tham gia UC-01 (xử lý giao dịch) |
+| Khách hàng (chưa đăng nhập) | UC-1 Xem thực đơn và tìm kiếm món, UC-2 Đăng ký tài khoản, UC-3 Xem chi tiết món và chọn Size/Topping, UC-4 Quản lý giỏ hàng, UC-5 Đăng nhập |
+| Khách hàng (đã đăng nhập) | Kế thừa UC-1…UC-5; UC-6 Xem lịch sử đơn hàng, UC-7 Theo dõi trạng thái đơn hàng, UC-8 Hủy đơn chờ thanh toán, UC-9 Tra cứu điểm thành viên, UC-10 Đặt và thanh toán đơn hàng |
+| Nhân viên quầy | UC-11 Xem danh sách đơn cần pha chế, UC-12 Cập nhật trạng thái đơn hàng |
+| Quản lý | UC-11, UC-12 (kế thừa nhân viên), UC-13 Quản trị thực đơn và khuyến mãi (Could – qua seed/SQL trong MVP) |
+| Payment Service (hệ thống ngoài) | Tham gia UC-10 (xử lý giao dịch) |
 
 ## 3. Yêu cầu chức năng (FR)
 

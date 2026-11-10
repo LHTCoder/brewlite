@@ -1,5 +1,5 @@
 @startuml sequence-checkout
-' Sequence-01: UC-01 Đặt và thanh toán đơn hàng (Task 2.2)
+' Sequence-01: UC-10 Đặt và thanh toán đơn hàng (Task 2.2)
 skinparam sequenceMessageAlign center
 skinparam ParticipantBackgroundColor #FBF7F2
 skinparam ParticipantBorderColor #8A5733

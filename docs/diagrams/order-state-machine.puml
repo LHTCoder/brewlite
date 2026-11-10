@@ -1,5 +1,7 @@
 @startuml order-state-machine
 ' Máy trạng thái đơn hàng – bổ trợ cho class diagram (enum OrderStatus) và FR-13
+' Bố cục ELK: đường nối thẳng, vuông góc theo góp ý của nhóm
+!pragma layout elk
 skinparam state {
   BackgroundColor #FBF7F2
   BorderColor #8A5733

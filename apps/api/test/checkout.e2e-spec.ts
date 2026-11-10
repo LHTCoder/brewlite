@@ -5,7 +5,7 @@ import { randomUUID } from 'crypto';
 import { createTestApp, resetTransactionalData } from './setup-db';
 
 /**
- * INT-T03..INT-T09: luồng UC-01 Đặt và thanh toán đơn hàng
+ * INT-T03..INT-T09: luồng UC-10 Đặt và thanh toán đơn hàng
  * (auth -> tạo đơn -> thanh toán -> idempotency -> trạng thái -> lịch sử)
  */
 describe('Checkout flow (integration)', () => {

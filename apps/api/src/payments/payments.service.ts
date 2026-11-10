@@ -33,7 +33,7 @@ export class PaymentsService {
   ) {}
 
   /**
-   * FR-07 Thanh toán đơn hàng (UC-01).
+   * FR-07 Thanh toán đơn hàng (UC-10).
    * - Idempotency: cùng idempotencyKey -> trả lại payment cũ, không trừ tiền lần 2.
    * - Thành công: order PENDING -> PAID, cộng điểm thưởng (LoyaltyTransaction).
    * - Thất bại: lưu payment FAILED, order giữ PENDING để khách thử lại với key mới.

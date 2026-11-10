@@ -4,7 +4,7 @@
 |---|---|
 | Phiên bản | 1.1 – viết lại bối cảnh và kỳ vọng stakeholder theo góp ý của nhóm |
 | Trạng thái | Approved (Sprint 0) |
-| Liên quan | [SRS](./srs.md) · [Đặc tả UC-01](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
+| Liên quan | [SRS](./srs.md) · [Đặc tả UC-10](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
 
 ## 1. Vấn đề nghiệp vụ
 
