@@ -46,6 +46,8 @@ repeat
     |Next.js UI (store/cart)|
     :Xóa dòng;
   case (Không làm gì)
+    |Next.js UI (store/cart)|
+    :Không thay đổi;
   endswitch
   |Next.js UI (store/cart)|
   :Tính lại tạm tính; lưu localStorage;
