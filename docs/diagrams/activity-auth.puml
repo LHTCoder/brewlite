@@ -15,6 +15,7 @@ if (Đã có tài khoản?) then (chưa)
   if (Hợp lệ?) then (không)
     :Hiển thị lỗi dưới từng trường;
     stop
+  else (có)
   endif
   :POST /auth/register;
   |NestJS API|
@@ -24,6 +25,7 @@ if (Đã có tài khoản?) then (chưa)
     |Next.js UI|
     :Hiển thị lỗi server;
     stop
+  else (có)
   endif
   |NestJS API|
   :Tìm user theo email (lowercase);
@@ -32,11 +34,13 @@ if (Đã có tài khoản?) then (chưa)
     |Next.js UI|
     :Hiển thị lỗi;
     stop
+  else (chưa)
   endif
   |NestJS API|
   :bcrypt.hash(password, 10);
   :INSERT users (role = CUSTOMER);
 else (rồi)
+  |Khách hàng|
   :Nhập email, mật khẩu;
   |Next.js UI|
   :Validate client;
@@ -49,6 +53,7 @@ else (rồi)
     |Next.js UI|
     :Hiển thị lỗi;
     stop
+  else (đúng)
   endif
 endif
 |NestJS API|

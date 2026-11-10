@@ -1,25 +1,25 @@
-# UC-01 – Đặt và thanh toán đơn hàng (Task 1.3)
+# UC-10 – Đặt và thanh toán đơn hàng (Task 1.3)
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Mã use-case | **UC-01** |
+| Mã use-case | **UC-10** |
 | Tên | Đặt và thanh toán đơn hàng (Checkout) |
 | Phiên bản | 1.1 – bổ sung đặc tả use-case con theo góp ý của nhóm |
 | Mức | Mục tiêu người dùng (user goal) |
 | Yêu cầu liên quan | FR-03, FR-04, **FR-05, FR-06, FR-07, FR-08, FR-09**, FR-10, FR-14; NFR-01, NFR-02, NFR-04 |
 | Sơ đồ | [use-case-checkout.svg](../diagrams/use-case-checkout.svg) · [activity-checkout.svg](../diagrams/activity-checkout.svg) · [sequence-checkout.svg](../diagrams/sequence-checkout.svg) · bổ trợ: [activity-menu](../diagrams/activity-menu.svg), [activity-cart](../diagrams/activity-cart.svg), [activity-auth](../diagrams/activity-auth.svg), [activity-order-status](../diagrams/activity-order-status.svg), [sequence-auth](../diagrams/sequence-auth.svg), [sequence-staff-status](../diagrams/sequence-staff-status.svg) |
 
-## 1. Sơ đồ use-case (phạm vi UC-01)
+## 1. Sơ đồ use-case (phạm vi UC-10)
 
-![UC-01](../diagrams/use-case-checkout.svg)
+![UC-10](../diagrams/use-case-checkout.svg)
 
 Nguồn: [`use-case-checkout.puml`](../diagrams/use-case-checkout.puml)
 
-## 1a. Đặc tả các use-case con (UC-01.1 – UC-01.4)
+## 1a. Đặc tả các use-case con (UC-10.1 – UC-10.4)
 
-Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đây mô tả từng use-case con; luồng chi tiết của toàn bộ UC-01 nằm ở mục 3–5.
+Sơ đồ ở mục 1 tách UC-10 thành 4 use-case con. Các bảng dưới đây mô tả từng use-case con; luồng chi tiết của toàn bộ UC-10 nằm ở mục 3–5.
 
-### UC-01.1 – Đặt đơn hàng (kiểm tra và trừ tồn kho)
+### UC-10.1 – Đặt đơn hàng (kiểm tra và trừ tồn kho)
 
 | Mục | Nội dung |
 |---|---|
@@ -27,27 +27,27 @@ Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đ�
 | Trigger | Khách nhấn **"Đặt đơn & thanh toán"** trên màn hình thanh toán |
 | Tóm tắt | Tạo đơn hàng từ giỏ; hệ thống kiểm tra tồn kho, tính lại giá và trừ tồn kho trong một transaction |
 | Tiền điều kiện | 1. Khách đã đăng nhập (JWT còn hạn). 2. Giỏ hàng có ít nhất một sản phẩm hợp lệ |
-| Luồng chính | 1. Khách chọn "Đặt đơn" trên giỏ hàng, hệ thống hiển thị màn hình thanh toán.<br>2. Khách có thể nhập mã khuyến mãi (extend "Áp dụng mã khuyến mãi").<br>3. Khách nhấn "Đặt đơn & thanh toán".<br>4. Hệ thống kiểm tra JWT và dữ liệu, kiểm tra tồn kho và tính lại tổng tiền ở server.<br>5. Trong một transaction: trừ tồn kho, sinh mã đơn BL-XXXXX ở trạng thái PENDING và lưu vào cơ sở dữ liệu.<br>6. Hệ thống chuyển sang bước thanh toán (UC-01.2) |
+| Luồng chính | 1. Khách chọn "Đặt đơn" trên giỏ hàng, hệ thống hiển thị màn hình thanh toán.<br>2. Khách có thể nhập mã khuyến mãi (extend "Áp dụng mã khuyến mãi").<br>3. Khách nhấn "Đặt đơn & thanh toán".<br>4. Hệ thống kiểm tra JWT và dữ liệu, kiểm tra tồn kho và tính lại tổng tiền ở server.<br>5. Trong một transaction: trừ tồn kho, sinh mã đơn BL-XXXXX ở trạng thái PENDING và lưu vào cơ sở dữ liệu.<br>6. Hệ thống chuyển sang bước thanh toán (UC-10.2) |
 | Luồng thay thế | 2a. Mã khuyến mãi không hợp lệ: hiển thị lý do, đơn tính không giảm giá, quay lại bước 3 |
 | Luồng ngoại lệ | 4a. Phiên đăng nhập hết hạn → 401, chuyển tới trang đăng nhập, giỏ hàng được giữ (include "Đăng nhập").<br>4b. Dữ liệu không hợp lệ → 400, hiển thị lỗi theo trường.<br>4c. Không đủ tồn kho → 422 "Món X chỉ còn N phần", rollback, không tạo đơn, quay lại giỏ |
 | Hậu điều kiện | Đơn được tạo với trạng thái PENDING; tồn kho các sản phẩm giảm đúng số lượng |
 | Yêu cầu liên quan | FR-05, FR-06, FR-07; NFR-02 |
 
-### UC-01.2 – Thanh toán đơn hàng
+### UC-10.2 – Thanh toán đơn hàng
 
 | Mục | Nội dung |
 |---|---|
 | Actor | Khách hàng đã đăng nhập; Dịch vụ thanh toán (mô phỏng) |
-| Trigger | Đơn vừa được tạo ở UC-01.1, hoặc khách nhấn "Thử thanh toán lại" |
+| Trigger | Đơn vừa được tạo ở UC-10.1, hoặc khách nhấn "Thử thanh toán lại" |
 | Tóm tắt | Thanh toán đơn bằng ví điện tử hoặc thẻ mô phỏng, có khóa chống trùng lặp (Idempotency-Key) |
 | Tiền điều kiện | 1. Khách đã đăng nhập. 2. Đơn thuộc về khách và đang ở trạng thái PENDING |
 | Luồng chính | 1. Khách chọn phương thức thanh toán (Ví điện tử hoặc Thẻ).<br>2. Hệ thống sinh Idempotency-Key và gửi yêu cầu `POST /payments` sang dịch vụ thanh toán mô phỏng.<br>3. Dịch vụ thanh toán trả kết quả thành công.<br>4. Hệ thống lưu giao dịch SUCCEEDED và cập nhật đơn thành PAID.<br>5. Hệ thống tích điểm thành viên (include "Tích điểm thành viên": 1 điểm / 10.000đ).<br>6. Hệ thống hiển thị "Thanh toán thành công" kèm mã đơn |
 | Luồng thay thế | 2a. Client gửi lại cùng Idempotency-Key (mạng chập chờn) → hệ thống trả lại kết quả giao dịch cũ, không trừ tiền lần hai |
-| Luồng ngoại lệ | 3a. Giao dịch bị từ chối → lưu giao dịch FAILED, đơn vẫn PENDING, hiển thị "Ngân hàng từ chối giao dịch"; khách có thể "Thanh toán lại" (extend) với Idempotency-Key mới hoặc hủy đơn (UC-01.3).<br>3b. Đơn không thuộc khách → 403; đơn không còn PENDING → 400 |
+| Luồng ngoại lệ | 3a. Giao dịch bị từ chối → lưu giao dịch FAILED, đơn vẫn PENDING, hiển thị "Ngân hàng từ chối giao dịch"; khách có thể "Thanh toán lại" (extend) với Idempotency-Key mới hoặc hủy đơn (UC-10.3).<br>3b. Đơn không thuộc khách → 403; đơn không còn PENDING → 400 |
 | Hậu điều kiện | Đơn ở trạng thái PAID; giao dịch thanh toán và điểm thành viên được ghi nhận |
 | Yêu cầu liên quan | FR-08, FR-09, FR-10, FR-14; NFR-02 |
 
-### UC-01.3 – Hủy đơn chờ thanh toán
+### UC-10.3 – Hủy đơn chờ thanh toán
 
 | Mục | Nội dung |
 |---|---|
@@ -61,7 +61,7 @@ Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đ�
 | Hậu điều kiện | Đơn ở trạng thái CANCELLED; tồn kho được khôi phục |
 | Yêu cầu liên quan | FR-12 |
 
-### UC-01.4 – Theo dõi trạng thái đơn hàng
+### UC-10.4 – Theo dõi trạng thái đơn hàng
 
 | Mục | Nội dung |
 |---|---|
@@ -101,13 +101,13 @@ Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đ�
 ## 4. Luồng thay thế (Alternative flows)
 
 **A1 – Khách chưa đăng nhập (tại bước 1)**
-1a. Hệ thống chuyển tới `/login?next=/checkout`. 1b. Khách đăng nhập/đăng ký thành công (UC-05/UC-06). 1c. Quay lại bước 1, giỏ hàng vẫn được giữ.
+1a. Hệ thống chuyển tới `/login?next=/checkout`. 1b. Khách đăng nhập/đăng ký thành công (UC-2/UC-5). 1c. Quay lại bước 1, giỏ hàng vẫn được giữ.
 
 **A2 – Mã khuyến mãi không hợp lệ (tại bước 2)**
 2a. API trả `valid=false` + `reason` (hết hạn, chưa đạt đơn tối thiểu) hoặc 404 (không tồn tại). 2b. Hiển thị lý do dưới ô nhập, `discount = 0`. 2c. Khách sửa mã hoặc bỏ qua, tiếp tục bước 3.
 
 **A3 – Thanh toán thất bại (tại bước 4.5)**
-8a. Payment Service trả **failure + reason** (thẻ bị từ chối / ví không đủ). 8b. API lưu `Payment(FAILED, failureReason)`, **đơn giữ PENDING**, không cộng điểm, trả 201 với `status=FAILED`. 8c. Frontend hiển thị thông báo lỗi kèm mã đơn, **sinh idempotencyKey mới**, đổi nút thành "Thử thanh toán lại", cho phép đổi phương thức. 8d. Khách thử lại → quay về bước 4.3 (không tạo đơn mới). Hoặc khách vào chi tiết đơn và **Hủy đơn** (UC-09) → tồn kho được hoàn.
+8a. Payment Service trả **failure + reason** (thẻ bị từ chối / ví không đủ). 8b. API lưu `Payment(FAILED, failureReason)`, **đơn giữ PENDING**, không cộng điểm, trả 201 với `status=FAILED`. 8c. Frontend hiển thị thông báo lỗi kèm mã đơn, **sinh idempotencyKey mới**, đổi nút thành "Thử thanh toán lại", cho phép đổi phương thức. 8d. Khách thử lại → quay về bước 4.3 (không tạo đơn mới). Hoặc khách vào chi tiết đơn và **Hủy đơn** (UC-8) → tồn kho được hoàn.
 
 **A4 – Client gửi lại yêu cầu thanh toán (retry mạng / bấm hai lần) (tại bước 4.3–4.4)**
 7a. API tìm thấy `Payment` có cùng `idempotencyKey` cho cùng `orderId` → trả lại bản ghi cũ (201), **không gọi Payment Service lần 2**, không tạo bản ghi mới. 7b. Nếu key trùng nhưng `orderId` khác → 409 Conflict.
@@ -148,7 +148,7 @@ Sơ đồ ở mục 1 tách UC-01 thành 4 use-case con. Các bảng dưới đ�
 
 ## 8. Liên kết truy vết
 
-| Yêu cầu | Bước trong UC-01 | Thiết kế | Code | Test |
+| Yêu cầu | Bước trong UC-10 | Thiết kế | Code | Test |
 |---|---|---|---|---|
 | FR-05 | 4.2, E1 | Activity-01, Sequence-01 | `OrdersService.create` (FOR UPDATE) | INT-T06 |
 | FR-06 | 4.1–4.2 | Sequence-01, Class-01 | `POST /orders` | INT-T05, INT-T07, UNIT-T01 |

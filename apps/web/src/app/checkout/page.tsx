@@ -17,7 +17,7 @@ function newIdempotencyKey() {
 }
 
 /**
- * UC-01 Đặt và thanh toán đơn hàng:
+ * UC-10 Đặt và thanh toán đơn hàng:
  *  1. Kiểm tra mã KM (tùy chọn) -> 2. POST /orders -> 3. POST /payments (idempotent)
  *  -> 4. điều hướng tới trang xác nhận. Thất bại thanh toán: giữ đơn PENDING, cho thử lại.
  */

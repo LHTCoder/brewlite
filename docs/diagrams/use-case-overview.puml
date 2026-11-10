@@ -1,55 +1,69 @@
 @startuml use-case-overview
 ' Sơ đồ use-case tổng quát hệ thống BrewLite (SRS §2)
-' Liên kết actor – use-case là đường thẳng (association); quan hệ include/extend thể hiện ở sơ đồ UC-01
-left to right direction
+' Mã UC đánh theo thứ tự đọc trên sơ đồ; liên kết actor – use-case là đường thẳng (association)
+' Quan hệ include/extend của UC-10 thể hiện ở sơ đồ use-case "Đặt và thanh toán đơn hàng"
 skinparam packageStyle rectangle
+skinparam linetype polyline
 skinparam actorStyle awesome
+skinparam nodesep 18
+skinparam ranksep 40
 skinparam usecase {
   BackgroundColor #FBF7F2
   BorderColor #8A5733
 }
 
-actor "Khách hàng" as Guest
+actor "Khách hàng\n(chưa đăng nhập)" as Guest
 actor "Khách hàng\nđã đăng nhập" as Customer
+actor "<<system>>\nPayment Service\n(mô phỏng)" as Pay
 actor "Nhân viên quầy" as Staff
-actor "Quản lý" as Manager
-actor "Payment Service\n(mô phỏng)" as Pay <<system>>
+actor "Quản lý cửa hàng" as Manager
 
-Customer -|> Guest
-Manager -|> Staff
-
-rectangle "BrewLite" {
-  usecase "UC-02 Xem menu" as UC2
-  usecase "UC-03 Xem chi tiết\nsản phẩm" as UC3
-  usecase "UC-04 Quản lý giỏ hàng" as UC4
-  usecase "UC-05 Đăng ký" as UC5
-  usecase "UC-06 Đăng nhập" as UC6
-  usecase "UC-01 Đặt và thanh toán\nđơn hàng" as UC1 #F3E9DC
-  usecase "UC-07 Theo dõi\ntrạng thái đơn" as UC7
-  usecase "UC-08 Xem lịch sử đơn" as UC8
-  usecase "UC-09 Hủy đơn\nchưa thanh toán" as UC9
-  usecase "UC-10 Xem điểm thành viên" as UC10
-  usecase "UC-11 Xem đơn\ncần xử lý" as UC11
-  usecase "UC-12 Cập nhật\ntrạng thái đơn" as UC12
-  usecase "UC-13 Quản lý menu &\nkhuyến mãi (Could)" as UC13
+rectangle "Hệ thống đặt đồ uống BrewLite" {
+  usecase "UC-1: Xem thực đơn và tìm kiếm món" as UC1
+  usecase "UC-2: Đăng ký tài khoản" as UC2
+  usecase "UC-3: Xem chi tiết món và chọn Size/Topping" as UC3
+  usecase "UC-4: Quản lý giỏ hàng" as UC4
+  usecase "UC-5: Đăng nhập" as UC5
+  usecase "UC-6: Xem lịch sử đơn hàng" as UC6
+  usecase "UC-7: Theo dõi trạng thái đơn hàng" as UC7
+  usecase "UC-8: Hủy đơn chờ thanh toán" as UC8
+  usecase "UC-9: Tra cứu điểm thành viên" as UC9
+  usecase "UC-10: Đặt và thanh toán đơn hàng" as UC10 #F3E9DC
+  usecase "UC-11: Xem danh sách đơn cần pha chế" as UC11
+  usecase "UC-12: Cập nhật trạng thái đơn hàng" as UC12
+  usecase "UC-13: Quản trị thực đơn và khuyến mãi" as UC13
 }
 
-Guest -- UC2
-Guest -- UC3
-Guest -- UC4
-Guest -- UC5
-Guest -- UC6
+UC1 -[hidden]down- UC2
+UC2 -[hidden]down- UC3
+UC3 -[hidden]down- UC4
+UC4 -[hidden]down- UC5
+UC5 -[hidden]down- UC6
+UC6 -[hidden]down- UC7
+UC7 -[hidden]down- UC8
+UC8 -[hidden]down- UC9
+UC9 -[hidden]down- UC10
+UC11 -[hidden]down- UC12
+UC12 -[hidden]down- UC13
 
-Customer -- UC1
-Customer -- UC7
-Customer -- UC8
-Customer -- UC9
-Customer -- UC10
+Guest -right- UC1
+Guest -right- UC2
+Guest -right- UC3
+Guest -right- UC4
+Guest -right- UC5
 
-Staff -- UC11
-Staff -- UC12
-Manager -- UC13
+Customer -right- UC6
+Customer -right- UC7
+Customer -right- UC8
+Customer -right- UC9
+Customer -right- UC10
+UC10 -right- Pay
+Customer -[hidden]down- Pay
 
-UC1 -- Pay
+UC11 -right- Staff
+UC12 -right- Staff
+UC13 -right- Manager
 
+Guest <|-down- Customer
+Staff <|-down- Manager
 @enduml
