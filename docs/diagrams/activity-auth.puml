@@ -17,6 +17,7 @@ if (Đã có tài khoản?) then (chưa)
     stop
   else (có)
   endif
+  :Khóa nút gửi, hiện spinner;
   :POST /auth/register;
   |NestJS API|
   :ValidationPipe (RegisterDto);
