@@ -4,9 +4,12 @@
 ' Quan hệ include/extend của UC-10 thể hiện ở sơ đồ use-case "Đặt và thanh toán đơn hàng"
 skinparam packageStyle rectangle
 skinparam linetype polyline
-skinparam actorStyle awesome
 skinparam nodesep 18
 skinparam ranksep 40
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #000000
+}
 skinparam usecase {
   BackgroundColor #FBF7F2
   BorderColor #8A5733
