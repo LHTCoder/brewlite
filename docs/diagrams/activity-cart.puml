@@ -27,6 +27,7 @@ else (có món)
 endif
 |Khách hàng|
 repeat
+  |Next.js UI (store/cart)|
   switch (Thao tác?)
   case (Tăng)
     |Next.js UI (store/cart)|
@@ -35,6 +36,9 @@ repeat
     else (không)
       :Nút "+" bị vô hiệu;
     endif
+  case (Xóa)
+    |Next.js UI (store/cart)|
+    :Xóa dòng;
   case (Giảm)
     |Next.js UI (store/cart)|
     if (số lượng − 1 = 0?) then (có)
@@ -42,9 +46,6 @@ repeat
     else (không)
       :Số lượng − 1;
     endif
-  case (Xóa)
-    |Next.js UI (store/cart)|
-    :Xóa dòng;
   case (Không làm gì)
     |Next.js UI (store/cart)|
     :Không thay đổi;
@@ -57,6 +58,7 @@ repeat
   else (còn món)
   endif
   |Khách hàng|
+backward :Chọn thao tác khác;
 repeat while (Tiếp tục chỉnh?) is (có) not (không)
 :Nhấn "Đặt đơn";
 |Next.js UI (store/cart)|

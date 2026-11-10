@@ -14,7 +14,9 @@ repeat
   :Truy vấn products (is_available = true)
     join sizes, toppings;
   |Next.js UI|
-backward :Hiển thị Error state + nút "Thử lại" – khách nhấn "Thử lại";
+  :Nhận phản hồi (danh sách món hoặc lỗi);
+backward :Hiển thị Error state + nút "Thử lại"
+  – khách nhấn "Thử lại";
 repeat while (Lỗi mạng / 5xx?) is (có) not (200)
 if (Mảng rỗng?) then (rỗng)
   :Hiển thị Empty state "Menu đang trống";
@@ -33,6 +35,7 @@ repeat
     :Cập nhật lưới sản phẩm;
   endif
   |Khách hàng|
+backward :Tiếp tục tìm món;
 repeat while (Đã thấy món muốn mua?) is (chưa) not (rồi)
 :Chạm vào thẻ sản phẩm;
 |Next.js UI|
