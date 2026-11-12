@@ -1,6 +1,8 @@
 /**
  * Quay video demo luồng end-to-end trên production (không cần người thao tác).
  *   WEB_URL=... API_URL=... node record-demo.mjs   -> ../docs/evidence/video/*.webm
+ * Chuyển sang MP4 dọc 9:16 (1080x1920), hai bên lấp bằng nền làm mờ:
+ *   ffmpeg -i brewlite-demo.webm -filter_complex "[0:v]split=2[a][b];[b]scale=1080:2160,crop=1080:1920,boxblur=30:2,eq=brightness=-0.08[bg];[a]scale=960:1920:flags=lanczos,unsharp=5:5:0.6[fg];[bg][fg]overlay=60:0,format=yuv420p" -c:v libx264 -crf 18 -r 25 -movflags +faststart brewlite-demo.mp4
  * Video có chú thích tiếng Việt ở đầu màn hình cho từng bước.
  */
 import { chromium } from '@playwright/test';
@@ -20,7 +22,8 @@ const ctx = await browser.newContext({
   isMobile: true,
   hasTouch: true,
   locale: 'vi-VN',
-  recordVideo: { dir: OUT, size: { width: W * 2, height: H * 2 } },
+  // Kích thước video phải bằng viewport; lớn hơn thì khung hình chỉ nằm ở góc trên bên trái
+  recordVideo: { dir: OUT, size: { width: W, height: H } },
   deviceScaleFactor: 2,
 });
 // Thanh chú thích cố định ở đầu màn hình, giữ nội dung qua các lần chuyển trang
