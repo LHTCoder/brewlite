@@ -6,7 +6,7 @@
 |---|---|
 | `screens/` | Luồng end-to-end chạy **local** (Windows, PostgreSQL thật): menu → chi tiết → giỏ → đăng nhập/đăng ký → mã KM → thẻ bị từ chối → ví thành công → xác nhận → lịch sử đơn → tài khoản/điểm → màn hình quầy → Swagger → `/health` |
 | `production/` | Cùng luồng trên **production** https://brewlite-web-00zk.onrender.com (API https://brewlite-api-t8xs.onrender.com) |
-| `video/brewlite-demo.mp4` | Video demo ~80 giây trên production: menu → chi tiết (size L, topping) → giỏ → đăng ký → mã KM → thẻ bị từ chối → ví thành công → quầy chuyển PREPARING → READY → khách thấy cập nhật → điểm thưởng → món hết hàng (`tests/record-demo.mjs`) |
+| `video/brewlite-demo.mp4` | Video demo ~80 giây trên production: menu → chi tiết (size L, topping) → giỏ → đăng ký → mã KM → thẻ bị từ chối → ví thành công → quầy chuyển PREPARING → READY → khách thấy cập nhật → điểm thưởng → món hết hàng (`tests/record-demo.mjs`); khung dọc 9:16, 1080×1920 |
 | `github/` | Repo, lịch sử commit, danh sách PR, **PR #5 CI thất bại – bị chặn merge**, các lần chạy CI, các lần chạy CD, **CD #6 thành công** (gate → build → push GHCR → deploy → smoke test), packages GHCR, releases, nhánh |
 
 Liên kết trực tiếp:
