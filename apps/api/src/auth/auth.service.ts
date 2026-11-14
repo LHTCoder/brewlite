@@ -37,8 +37,16 @@ export class AuthService {
       passwordHash: await bcrypt.hash(dto.password, 10),
       role: UserRole.CUSTOMER,
     });
-    const saved = await this.users.save(user);
-    return this.issueToken(saved);
+    try {
+      const saved = await this.users.save(user);
+      return this.issueToken(saved);
+    } catch (err) {
+      // Hai yêu cầu đăng ký cùng email đến cùng lúc: unique index chặn bản thứ hai
+      if ((err as { code?: string })?.code === '23505') {
+        throw new ConflictException('Email đã được sử dụng');
+      }
+      throw err;
+    }
   }
 
   /** FR-04b Đăng nhập */

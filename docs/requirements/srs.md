@@ -92,39 +92,39 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
-| **FR-13** | Nhân viên/quản lý xem danh sách đơn đã thanh toán cần xử lý và chuyển trạng thái theo máy trạng thái `PENDING→PAID→PREPARING→READY→COMPLETED`, `PENDING/PAID→CANCELLED`. | Must | AC-13.1 `GET /orders/staff/all` với token CUSTOMER → 403; với STAFF/MANAGER → 200. AC-13.2 `PATCH /orders/:id/status` PAID→PREPARING → 200; PAID→COMPLETED (nhảy bước) → 400; COMPLETED→bất kỳ → 400. AC-13.3 Màn hình `/staff` chỉ hiện với vai trò STAFF/MANAGER, tự làm mới mỗi 8s, mỗi đơn có đúng 1 nút chuyển bước kế tiếp. |
+| **FR-13** | Nhân viên/quản lý xem danh sách đơn đã thanh toán cần xử lý và chuyển trạng thái tại quầy `PAID→PREPARING→READY→COMPLETED`. Trạng thái PAID chỉ do thanh toán thành công tạo ra (FR-08); hủy đơn chỉ qua FR-12 khi đơn còn PENDING; đơn đã PAID không hủy trên hệ thống (MVP chưa có hoàn tiền). | Must | AC-13.1 `GET /orders/staff/all` với token CUSTOMER → 403; với STAFF/MANAGER → 200; `?status=` sai giá trị → 400. AC-13.2 `PATCH /orders/:id/status` PAID→PREPARING → 200; PAID→COMPLETED (nhảy bước) → 400; COMPLETED→bất kỳ → 400; PATCH sang PAID, PENDING hoặc CANCELLED → 400. AC-13.3 Màn hình `/staff` chỉ hiện với vai trò STAFF/MANAGER, tự làm mới mỗi 8s, mỗi đơn có đúng 1 nút chuyển bước kế tiếp. |
 
 ### 3.8 Điểm thưởng
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
 | **FR-14** | Mỗi 10.000đ thanh toán thành công tích 1 điểm; ghi `LoyaltyTransaction` EARN và cộng vào `user.loyaltyPoints`; khách xem điểm và lịch sử tích điểm. | Should | AC-14.1 Thanh toán thành công đơn 99.000đ → +9 điểm, 100.000đ → +10 điểm; `GET /auth/me` phản ánh điểm mới. AC-14.2 `GET /loyalty/transactions` có bản ghi `type=EARN` gắn với `order`. AC-14.3 Thanh toán thất bại không tạo giao dịch điểm. |
-| **FR-15** | Đổi điểm lấy giảm giá (REDEEM). | Could | (Chưa hiện thực trong MVP; mô hình dữ liệu đã hỗ trợ `LoyaltyTransactionType.REDEEM`.) |
+| **FR-15** | Đổi điểm lấy giảm giá (REDEEM). | Could | AC-15.1 Khách có ≥ 100 điểm chọn đổi 100 điểm khi đặt đơn → đơn được giảm 10.000đ, `user.loyaltyPoints` giảm 100, có `LoyaltyTransaction` `type=REDEEM`. AC-15.2 Không đủ điểm → 400, không trừ điểm. *(Chưa hiện thực trong MVP; mô hình dữ liệu đã có `LoyaltyTransactionType.REDEEM`.)* |
 
 ### 3.9 Quản trị menu
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
-| **FR-16** | Quản lý thêm/sửa sản phẩm, giá, tồn kho, khuyến mãi qua giao diện. | Could | (MVP: thực hiện qua seed/migration/SQL; có thể bổ sung Sprint 3.) |
-| **FR-17** | Thông báo đẩy khi đơn READY. | Won't (MVP) | — |
+| **FR-16** | Quản lý thêm/sửa sản phẩm, giá, tồn kho, khuyến mãi qua giao diện. | Could | AC-16.1 MANAGER sửa giá/tồn kho một món → `GET /products/:id` trả giá trị mới; CUSTOMER/STAFF gọi API quản trị → 403. *(Chưa hiện thực; MVP quản lý menu qua seed/migration.)* |
+| **FR-17** | Thông báo đẩy khi đơn READY. | Won't (MVP) | Không làm trong MVP nên không đặt tiêu chí chấp nhận. |
 
 ## 4. Yêu cầu phi chức năng (NFR)
 
 | Mã | Nhóm | Yêu cầu | MoSCoW | Tiêu chí chấp nhận / cách đo |
 |---|---|---|---|---|
-| **NFR-01** | Hiệu năng | API `GET /products` phản hồi p95 ≤ 300 ms với 50 người dùng đồng thời; màn hình menu hiển thị nội dung ≤ 2 s trên mạng 4G; `POST /orders` + `POST /payments` ≤ 1,5 s (không tính độ trễ cổng thanh toán). | Must | Đo bằng Lighthouse (mobile) ≥ 85 điểm Performance; `autocannon -c 50 -d 20 /products` p95 ≤ 300 ms trên môi trường production. |
-| **NFR-02** | Bảo mật | Mật khẩu hash bcrypt; JWT ký HS256 với secret ≥ 32 ký tự, hết hạn ≤ 24 h; mọi input được validate và loại bỏ trường lạ (whitelist); HTTP security headers (helmet); CORS chỉ cho origin cấu hình; số thẻ không lưu; secret chỉ qua biến môi trường; DB không mở public. | Must | Test API-T03/INT-T03 (hash, 401/403); `npm audit --audit-level=high` không có lỗ hổng High/Critical; kiểm tra header `X-Content-Type-Options`, `X-Frame-Options`; `grep -r JWT_SECRET` repo chỉ thấy `.env.example`. |
-| **NFR-03** | Tính khả dụng (Usability) | Mobile-first: dùng được một tay trên màn 360×640; nút ≥ 44 px; có trạng thái loading/empty/error ở mọi màn; thông báo lỗi bằng tiếng Việt rõ ràng; PWA có manifest, cài được ra màn hình chính, có trang offline. | Must | Lighthouse Accessibility ≥ 90, PWA installable; kiểm thử thủ công checklist UI trong Sprint Review. |
-| **NFR-04** | Độ tin cậy | Tạo đơn/thanh toán là giao dịch nguyên tử (all-or-nothing); thanh toán idempotent; uptime production ≥ 99 % trong tuần chấm; dữ liệu đơn không mất khi API restart (persistent volume). | Must | Test INT-T05, INT-T06, INT-T09; health check Render; log restart. |
+| **NFR-01** | Hiệu năng | API `GET /products` phản hồi p95 ≤ 300 ms với 50 người dùng đồng thời; màn hình menu hiển thị nội dung ≤ 2 s trên mạng 4G; `POST /orders` + `POST /payments` ≤ 1,5 s (không tính độ trễ cổng thanh toán). | Must | Đo bằng Lighthouse (mobile) ≥ 85 điểm Performance; `autocannon -c 50 -d 20 /products` p95 ≤ 300 ms. Kết quả đo (local đạt; production gói Free chưa đạt): [`docs/evidence/nfr`](../evidence/nfr/README.md). |
+| **NFR-02** | Bảo mật | Mật khẩu hash bcrypt; JWT ký HS256 với secret ≥ 32 ký tự, hết hạn ≤ 24 h; mọi input được validate và loại bỏ trường lạ (whitelist); HTTP security headers (helmet); CORS chỉ cho origin cấu hình; số thẻ không lưu; secret chỉ qua biến môi trường; DB không mở public. | Must | Test API-T03/INT-T03 (hash, 401/403); `npm audit --audit-level=high` không có lỗ hổng High/Critical (hiện **chưa đạt**, xem [`docs/evidence/nfr`](../evidence/nfr/README.md)); kiểm tra header `X-Content-Type-Options`, `X-Frame-Options`; repo không chứa `JWT_SECRET` của production (chỉ có giá trị mẫu cho dev/CI trong `.env.example`, `docker-compose.yml`, `ci.yml`; production do Render sinh ngẫu nhiên). |
+| **NFR-03** | Tính khả dụng (Usability) | Mobile-first: dùng được một tay trên màn 360×640; nút ≥ 44 px; có trạng thái loading/empty/error ở mọi màn; thông báo lỗi bằng tiếng Việt rõ ràng; PWA có manifest, cài được ra màn hình chính, có trang offline. | Must | Lighthouse Accessibility ≥ 90 (đo: Menu 100, Chi tiết món 96), PWA installable; kiểm thử thủ công checklist UI trong Sprint Review. |
+| **NFR-04** | Độ tin cậy | Tạo đơn/thanh toán là giao dịch nguyên tử (all-or-nothing); thanh toán idempotent; uptime production ≥ 99 % trong tuần chấm; dữ liệu đơn không mất khi API restart (persistent volume). | Must | Test INT-T05, INT-T06, INT-T09, INT-T14; health check Render; log restart. Lưu ý: gói Free cho server ngủ sau ~15 phút không dùng, request đầu chờ 30–60 s; nhóm mở trang trước buổi chấm (rủi ro R-01). |
 | **NFR-05** | Khả năng triển khai | Chạy local bằng một lệnh `docker compose up`; có `GET /health` kiểm tra DB; migration tự chạy an toàn trước khi API start; CI: install→lint→test→build chặn merge; CD: build image tag theo SHA, push GHCR, deploy production, smoke test, hướng dẫn rollback. | Must | Người ngoài nhóm clone & chạy theo README thành công < 10 phút; workflow CI/CD xanh trên GitHub Actions; URL HTTPS truy cập được. |
-| **NFR-06** | Khả năng bảo trì | Backend chia module theo domain (products, auth, orders, payments, promotions, loyalty); lint + prettier thống nhất; coverage unit ≥ 70 % cho module nghiệp vụ (pricing, orders, payments); ADR cho quyết định quan trọng. | Should | `npm run test:cov`; thư mục `docs/architecture/adr`. |
+| **NFR-06** | Khả năng bảo trì | Backend chia module theo domain (products, auth, orders, payments, promotions, loyalty); lint + prettier thống nhất; coverage ≥ 70 % cho module nghiệp vụ (pricing, orders, payments), đo gộp unit + integration; ADR cho quyết định quan trọng. | Should | `npm run test:cov` (unit) và `npm run test:integration:cov`; kết quả ở [`docs/evidence/nfr`](../evidence/nfr/README.md); thư mục `docs/architecture/adr`. |
 | **NFR-07** | Khả năng quan sát | Log có cấu trúc cho mỗi request (method, path, status, ms) và sự kiện nghiệp vụ (tạo đơn, thanh toán); lỗi 5xx ghi stack trace; `GET /health` trả version build. | Should | Xem log trên Render; `health.version` = commit SHA đã deploy. |
 | **NFR-08** | Tương thích | Hoạt động trên Chrome/Edge/Safari/Firefox phiên bản ≤ 2 năm, iOS ≥ 15, Android ≥ 10. | Should | Kiểm thử thủ công trên ≥ 2 thiết bị thật trong Sprint Review. |
 | **NFR-09** | Khả năng mở rộng | API stateless (JWT), có thể chạy nhiều instance phía sau load balancer; không lưu session trên server. | Could | Chạy 2 container API cùng DB, luồng checkout vẫn đúng. |
 
 ## 5. Ràng buộc thiết kế & giao diện ngoài
 
-- **Giao diện lập trình**: REST/JSON, tài liệu OpenAPI tại `/docs` (Swagger) ở môi trường dev.
+- **Giao diện lập trình**: REST/JSON, tài liệu OpenAPI tại `/docs` (Swagger). Production bật Swagger bằng `SWAGGER_ENABLED=true` để giảng viên xem; khi vận hành thật thì tắt.
 - **Dịch vụ thanh toán**: giao diện `PaymentGatewayService.charge(request) → {success, providerRef | reason}`; MVP dùng bản mô phỏng, có thể thay bằng adapter MoMo/VNPay mà không đổi `PaymentsService` (ADR-005).
 - **Dữ liệu**: PostgreSQL 16, schema quản lý bằng TypeORM migration; seed idempotent.
 

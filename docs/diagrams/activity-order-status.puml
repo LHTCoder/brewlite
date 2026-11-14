@@ -49,7 +49,7 @@ fork again
   :PATCH /orders/:id/status {PREPARING};
   |NestJS API|
   :JwtAuthGuard + @Roles(STAFF, MANAGER);
-  note right: Nhân viên cũng có thể hủy đơn PAID → CANCELLED (hoàn tồn kho), xem State-01
+  note right: PATCH chỉ nhận PREPARING / READY / COMPLETED;\nPAID chỉ do thanh toán tạo ra, hủy chỉ qua /cancel khi còn PENDING (State-01)
   if (Chuyển trạng thái hợp lệ theo ORDER_TRANSITIONS?) then (không)
     :400 "Không thể chuyển trạng thái";
     |Next.js UI|

@@ -5,7 +5,9 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { Payment } from './payment.entity';
 import { Order } from '../orders/order.entity';
@@ -30,15 +32,21 @@ export class PaymentsService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly gateway: PaymentGatewayService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
-   * FR-07 Thanh toán đơn hàng (UC-10).
+   * FR-08 Thanh toán đơn hàng (UC-10.2), FR-09 idempotency, FR-14 tích điểm.
    * - Idempotency: cùng idempotencyKey -> trả lại payment cũ, không trừ tiền lần 2.
    * - Thành công: order PENDING -> PAID, cộng điểm thưởng (LoyaltyTransaction).
-   * - Thất bại: lưu payment FAILED, order giữ PENDING để khách thử lại với key mới.
+   * - Thất bại: lưu payment FAILED, order giữ PENDING để khách thử lại với key mới
+   *   (mỗi đơn giữ 1 bản ghi Payment: lần thử lại thay bản FAILED cũ).
+   * - Cổng không phản hồi trong PAYMENT_TIMEOUT_MS: rollback toàn bộ, trả 503 (E8).
    */
-  async pay(dto: CreatePaymentDto, actor: JwtPayload): Promise<Payment> {
+  async pay(
+    dto: CreatePaymentDto & { idempotencyKey: string },
+    actor: JwtPayload,
+  ): Promise<Payment> {
     // 1. Idempotency check (ngoài transaction, đọc nhanh)
     const existing = await this.dataSource.getRepository(Payment).findOne({
       where: { idempotencyKey: dto.idempotencyKey },
@@ -69,6 +77,17 @@ export class PaymentsService {
       if (order.user.id !== actor.sub && actor.role === UserRole.CUSTOMER) {
         throw new ForbiddenException('Bạn không có quyền thanh toán đơn này');
       }
+      // Hai yêu cầu cùng key đến đồng thời: yêu cầu sau chờ khóa xong thì trả lại kết quả cũ
+      const replay = await manager.findOne(Payment, {
+        where: { idempotencyKey: dto.idempotencyKey },
+        relations: ['order'],
+      });
+      if (replay) {
+        if (replay.order.id !== order.id) {
+          throw new ConflictException('Idempotency key đã được dùng cho đơn hàng khác');
+        }
+        return replay;
+      }
       if (order.status !== OrderStatus.PENDING) {
         throw new BadRequestException(
           `Đơn hàng đang ở trạng thái ${order.status}, không thể thanh toán`,
@@ -90,13 +109,17 @@ export class PaymentsService {
         })
         .execute();
 
-      // 2. Gọi cổng thanh toán mô phỏng
-      const result = await this.gateway.charge({
-        method: dto.method,
-        amount: order.total,
-        cardNumber: dto.cardNumber,
-        walletPhone: dto.walletPhone,
-      });
+      // 2. Gọi cổng thanh toán mô phỏng, có giới hạn thời gian chờ
+      const timeoutMs = this.config.get<number>('payment.timeoutMs') ?? 10000;
+      const result = await withTimeout(
+        this.gateway.charge({
+          method: dto.method,
+          amount: order.total,
+          cardNumber: dto.cardNumber,
+          walletPhone: dto.walletPhone,
+        }),
+        timeoutMs,
+      );
 
       const payment = manager.create(Payment, {
         order,
@@ -150,5 +173,27 @@ export class PaymentsService {
     }
     payment.order = { ...payment.order, user: undefined } as unknown as Order;
     return payment;
+  }
+}
+
+/**
+ * Chờ promise tối đa `ms` mili giây; quá hạn thì ném 503 để transaction rollback (UC-10 E8).
+ * Khách thử lại với cùng idempotency key vì chưa có giao dịch nào được ghi.
+ */
+export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(
+      () =>
+        reject(
+          new ServiceUnavailableException('Cổng thanh toán không phản hồi, vui lòng thử lại sau'),
+        ),
+      ms,
+    );
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }

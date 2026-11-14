@@ -10,7 +10,9 @@ import { Spinner } from './States';
 export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get('next') || '/';
+  // Chỉ cho phép quay lại đường dẫn nội bộ (chặn open redirect kiểu ?next=https://site-la)
+  const rawNext = params.get('next') || '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
   const login = useAuth((s) => s.login);
 
   const [form, setForm] = useState({ email: '', password: '', fullName: '' });

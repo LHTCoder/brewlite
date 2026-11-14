@@ -1,6 +1,6 @@
 # Quy ước đóng góp – BrewLite
 
-## 1. Chiến lược branch (Git Flow rút gọn)
+## 1. Chiến lược branch (GitHub Flow)
 
 ```
 main  ──●──────●──────●──── (được bảo vệ, chỉ merge qua PR, CI phải xanh; mỗi merge = deploy production)
@@ -10,8 +10,8 @@ feat/menu-page  fix/payment-retry   docs/srs-v1.1   chore/ci-cache
 
 | Nhánh | Mục đích | Quy tắc |
 |---|---|---|
-| `main` | Mã nguồn sẵn sàng production | Protected: bắt buộc PR, status check `API`, `Web`, `E2E` pass, không push trực tiếp; thành viên khác review trước khi merge |
-| `feat/<ten-ngan>` | Tính năng (kèm số issue nếu có: `feat/12-payment-idempotency`) | Tạo từ `main`, xóa sau merge |
+| `main` | Mã nguồn sẵn sàng production | Protected: bắt buộc PR, status check bắt buộc `API – lint, test, build` và `Web – lint, test, build`, không push trực tiếp. Job E2E chạy trên mọi PR và được CD chạy lại làm quality gate trước khi deploy |
+| `feat/<ten-ngan>` | Tính năng (ví dụ `feat/payment-idempotency`) | Tạo từ `main`, xóa sau merge |
 | `fix/<ten>` | Sửa lỗi | như trên |
 | `docs/<ten>` | Tài liệu/sơ đồ | như trên; mô tả PR nêu **lý do thay đổi** |
 | `chore/<ten>` | CI, cấu hình, dependency | như trên |
@@ -19,10 +19,10 @@ feat/menu-page  fix/payment-retry   docs/srs-v1.1   chore/ci-cache
 
 ## 2. Pull Request
 
-- Một PR = một issue, nhỏ (< 400 dòng thay đổi nếu có thể).
+- Một PR = một hạng mục trong Product Backlog (`docs/sprints/product-backlog.md`), nhỏ nếu có thể.
 - Tiêu đề theo Conventional Commits (mục 3). Mô tả theo template `.github/pull_request_template.md`: **What / Why / How to test / Yêu cầu liên quan (FR-xx) / Tài liệu cập nhật**.
 - CI tự chạy; **không merge khi lint/test/build đỏ** (branch protection chặn).
-- Reviewer kiểm tra theo [Definition of Done](./docs/sprints/definition-of-done.md).
+- Kiểm tra theo [Definition of Done](./docs/sprints/definition-of-done.md). Nhóm dùng một tài khoản GitHub (trưởng nhóm); thành viên góp ý trên bản nháp đặc tả/sơ đồ trước khi trưởng nhóm đưa vào PR (ví dụ PR #10, #14–#17), nên GitHub không ghi nhận review chéo.
 - Merge bằng *Create a merge commit* để giữ nguyên lịch sử commit của từng nhánh.
 
 ## 3. Quy ước commit (Conventional Commits)

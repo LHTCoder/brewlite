@@ -34,8 +34,8 @@ rectangle "Ranh giới CI (GitHub)" as CI #E8F0FE {
       component "ci.yml\nInstall→Lint→Test→Build" as CIW
       component "cd.yml\nBuild image → Push → Deploy → Smoke" as CDW
     }
-    database "GitHub Secrets\nRENDER_DEPLOY_HOOK_*\nRENDER_API_URL..." as SECRETS
-    node "GitHub Container Registry\nghcr.io/<org>/brewlite-api:<sha>\nghcr.io/<org>/brewlite-web:<sha>" <<registry>> as GHCR
+    database "GitHub Secrets: RENDER_DEPLOY_HOOK_API/WEB\nGitHub Variables: PRODUCTION_API_URL,\nPRODUCTION_WEB_URL" as SECRETS
+    node "GitHub Container Registry\nghcr.io/lhtcoder/brewlite-api:<sha>\nghcr.io/lhtcoder/brewlite-web:<sha>" <<registry>> as GHCR
   }
 }
 
@@ -54,8 +54,8 @@ rectangle "Ranh giới PRODUCTION (Render.com, region Singapore)" as PROD #E6F4E
     component "Logger → stdout\n(Render Logs)" as LOG
   }
 
-  node "Render PostgreSQL 16\n(managed, private network)" <<DBMS>> as PGSVC {
-    database "brewlite DB\nPersistent disk (SSD)\nDaily backup" as PG
+  node "Render PostgreSQL 16 – gói Free\n(managed, mạng nội bộ Render)" <<DBMS>> as PGSVC {
+    database "brewlite DB\nPersistent disk (SSD)\nsao lưu thủ công pg_dump" as PG
   }
 
   component "Payment Service\n(module mô phỏng trong API –\nthay bằng MoMo/VNPay adapter sau)" as PAYSVC
@@ -74,7 +74,7 @@ DEV -right-> REPO : git push / Pull Request\n(HTTPS)
 REPO --> CIW : trigger on PR
 REPO --> CDW : trigger on push main / tag v*
 CDW --> GHCR : docker push\n(GITHUB_TOKEN)
-SECRETS ..> CDW : inject secrets
+SECRETS ..> CDW : inject secrets / vars
 CDW --> WEBSVC : POST deploy hook\n(imgURL=ghcr.io/...:sha) HTTPS
 CDW --> APISVC : POST deploy hook\n(imgURL=ghcr.io/...:sha) HTTPS
 GHCR --> WEBSVC : pull image
@@ -87,14 +87,15 @@ STAFFUI --> EDGE : HTTPS :443
 EDGE --> WEB : HTTP :3000 (nội bộ)
 BROWSER --> EDGE : HTTPS :443\nAPI JSON (CORS origin = web)
 EDGE --> API : HTTP :4000 (nội bộ)
-API --> PG : TCP :5432 (TLS, private network,\nkhông public)
+API --> PG : TCP :5432 qua Internal URL\n(mạng nội bộ, không qua Internet)
 API --> PAYSVC : charge()
 EDGE ..> HC : health check định kỳ
 
 note bottom of PGSVC
-  DB không có public IP; chỉ các service
-  trong cùng Render account truy cập qua
-  Internal Database URL.
+  API kết nối qua Internal Database URL.
+  External URL bị chặn bằng Access Control
+  (danh sách IP rỗng, ipAllowList: []).
+  Gói Free hết hạn 30 ngày sau khi tạo.
 end note
 note bottom of SECRETS
   Secret không nằm trong repo hay log CI;
@@ -102,7 +103,7 @@ note bottom of SECRETS
 end note
 note top of EDGE
   Render cấp *.onrender.com + chứng chỉ TLS;
-  web: https://brewlite-web.onrender.com
-  api: https://brewlite-api.onrender.com
+  web: https://brewlite-web-00zk.onrender.com
+  api: https://brewlite-api-t8xs.onrender.com
 end note
 @enduml

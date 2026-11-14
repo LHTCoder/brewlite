@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -22,19 +23,24 @@ export class PaymentsController {
   constructor(private readonly service: PaymentsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'FR-07 Thanh toán Ví/Thẻ mô phỏng (idempotent)' })
+  @ApiOperation({ summary: 'FR-08 Thanh toán Ví/Thẻ mô phỏng, FR-09 idempotent' })
   @ApiHeader({
     name: 'Idempotency-Key',
     required: false,
-    description: 'Thay thế cho body.idempotencyKey',
+    description: 'Thay thế cho body.idempotencyKey (8–100 ký tự)',
   })
   pay(
     @Body() dto: CreatePaymentDto,
     @CurrentUser() user: JwtPayload,
     @Headers('idempotency-key') headerKey?: string,
   ) {
-    if (headerKey) dto.idempotencyKey = headerKey;
-    return this.service.pay(dto, user);
+    const key = (headerKey ?? dto.idempotencyKey ?? '').trim();
+    if (key.length < 8 || key.length > 100) {
+      throw new BadRequestException(
+        'Thiếu khóa idempotency hợp lệ (8–100 ký tự) trong header Idempotency-Key hoặc body',
+      );
+    }
+    return this.service.pay({ ...dto, idempotencyKey: key }, user);
   }
 
   @Get(':id')

@@ -8,7 +8,7 @@ export interface AppConfig {
   databaseUrl: string;
   jwt: { secret: string; expiresIn: string };
   corsOrigins: string[];
-  payment: { walletLimit: number };
+  payment: { walletLimit: number; timeoutMs: number };
   logLevel: string;
 }
 
@@ -29,7 +29,10 @@ export default (): AppConfig => {
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
-    payment: { walletLimit: parseInt(process.env.PAYMENT_WALLET_LIMIT ?? '500000', 10) },
+    payment: {
+      walletLimit: parseInt(process.env.PAYMENT_WALLET_LIMIT ?? '500000', 10),
+      timeoutMs: parseInt(process.env.PAYMENT_TIMEOUT_MS ?? '10000', 10),
+    },
     logLevel: process.env.LOG_LEVEL ?? 'log',
   };
 };

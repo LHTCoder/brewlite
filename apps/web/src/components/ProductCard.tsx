@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
         )}
       </div>
-      <h3 className="line-clamp-2 text-sm font-semibold leading-tight">{product.name}</h3>
+      <h2 className="line-clamp-2 text-sm font-semibold leading-tight">{product.name}</h2>
       <div className="mt-auto flex items-center justify-between">
         <span className="font-bold text-brew-700">{formatVND(product.basePrice)}</span>
         {!soldOut && (

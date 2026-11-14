@@ -107,10 +107,10 @@ Sơ đồ ở mục 1 tách UC-10 thành 4 use-case con. Các bảng dưới đ�
 2a. API trả `valid=false` + `reason` (hết hạn, chưa đạt đơn tối thiểu) hoặc 404 (không tồn tại). 2b. Hiển thị lý do dưới ô nhập, `discount = 0`. 2c. Khách sửa mã hoặc bỏ qua, tiếp tục bước 3.
 
 **A3 – Thanh toán thất bại (tại bước 4.5)**
-8a. Payment Service trả **failure + reason** (thẻ bị từ chối / ví không đủ). 8b. API lưu `Payment(FAILED, failureReason)`, **đơn giữ PENDING**, không cộng điểm, trả 201 với `status=FAILED`. 8c. Frontend hiển thị thông báo lỗi kèm mã đơn, **sinh idempotencyKey mới**, đổi nút thành "Thử thanh toán lại", cho phép đổi phương thức. 8d. Khách thử lại → quay về bước 4.3 (không tạo đơn mới). Hoặc khách vào chi tiết đơn và **Hủy đơn** (UC-8) → tồn kho được hoàn.
+4.5a. Payment Service trả **failure + reason** (thẻ bị từ chối / ví không đủ). 4.5b. API lưu `Payment(FAILED, failureReason)`, **đơn giữ PENDING**, không cộng điểm, trả 201 với `status=FAILED`. 4.5c. Frontend hiển thị thông báo lỗi kèm mã đơn, **sinh idempotencyKey mới**, đổi nút thành "Thử thanh toán lại", cho phép đổi phương thức. 4.5d. Khách thử lại → quay về bước 4.3 (không tạo đơn mới). Mỗi đơn giữ **một** bản ghi Payment (quan hệ 1–0..1): lần thử lại thay bản FAILED cũ, lý do thất bại được ghi trong log. Hoặc khách vào chi tiết đơn và **Hủy đơn** (UC-8) → tồn kho được hoàn.
 
 **A4 – Client gửi lại yêu cầu thanh toán (retry mạng / bấm hai lần) (tại bước 4.3–4.4)**
-7a. API tìm thấy `Payment` có cùng `idempotencyKey` cho cùng `orderId` → trả lại bản ghi cũ (201), **không gọi Payment Service lần 2**, không tạo bản ghi mới. 7b. Nếu key trùng nhưng `orderId` khác → 409 Conflict.
+4.4a. API tìm thấy `Payment` có cùng `idempotencyKey` cho cùng `orderId` → trả lại bản ghi cũ (201), **không gọi Payment Service lần 2**, không tạo bản ghi mới. 4.4b. Nếu key trùng nhưng `orderId` khác → 409 Conflict. 4.4c. Hai yêu cầu cùng key đến đồng thời: yêu cầu sau chờ khóa đơn, sau đó tìm thấy bản ghi của yêu cầu trước và trả lại bản ghi đó.
 
 **A5 – Sản phẩm không có size (bánh)**
 5a. Dòng không cần `sizeId`; `sizeName = null`, `sizeExtra = 0`. Tiếp tục bước 4.2.
@@ -126,7 +126,7 @@ Sơ đồ ở mục 1 tách UC-10 thành 4 use-case con. Các bảng dưới đ�
 | **E5 – Thanh toán đơn không thuộc mình** (bước 4.4) | `order.user ≠ actor` và actor là CUSTOMER | 403 "Bạn không có quyền thanh toán đơn này". |
 | **E6 – Đơn không ở PENDING** (bước 4.4) | Đơn đã PAID/CANCELLED | 400 "Đơn hàng đang ở trạng thái X, không thể thanh toán". |
 | **E7 – Mất kết nối / API lỗi 5xx** (bất kỳ) | Network error, DB down | Frontend hiển thị "Không kết nối được máy chủ" + cho thử lại; nếu đơn đã tạo (bước 4.2 xong) thì giữ `pendingOrder` để thử thanh toán lại với key mới (A4 bảo vệ khỏi trùng). API ghi log lỗi với stack trace. |
-| **E8 – Payment Service timeout** (bước 4.4) | Không nhận được phản hồi | Transaction rollback phần payment (không lưu SUCCEEDED); đơn giữ PENDING; trả 503; khách thử lại với **cùng** key để tận dụng idempotency. *(Mô phỏng: có thể giả lập bằng cách tắt mạng.)* |
+| **E8 – Payment Service timeout** (bước 4.4) | Không nhận được phản hồi | Quá `PAYMENT_TIMEOUT_MS` (mặc định 10 s): transaction rollback toàn bộ (không lưu Payment); đơn giữ PENDING; trả 503; khách thử lại với **cùng** key. *(Test UNIT-T09.)* |
 
 ## 6. Quy tắc nghiệp vụ
 

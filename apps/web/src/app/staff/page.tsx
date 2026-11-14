@@ -16,7 +16,7 @@ const NEXT: Partial<Record<OrderStatus, { to: OrderStatus; label: string }>> = {
   READY: { to: 'COMPLETED', label: 'Khách đã nhận' },
 };
 
-/** FR-11 Màn hình quầy: nhân viên cập nhật trạng thái đơn */
+/** FR-13 Màn hình quầy: nhân viên cập nhật trạng thái đơn */
 export default function StaffPage() {
   const { user, hydrated } = useAuth();
   const router = useRouter();

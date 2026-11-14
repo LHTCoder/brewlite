@@ -15,10 +15,10 @@ Sơ đồ: [deployment-production.svg](./diagrams/deployment-production.svg) · 
 ## 2. Thiết lập production trên Render (làm một lần)
 
 1. Tạo tài khoản Render, kết nối GitHub.
-2. **Database:** *New → PostgreSQL* → tên `brewlite-db`, region Singapore, plan Free. Copy **Internal Database URL** (dạng `postgresql://user:pass@host/brewlite`). DB này không có public IP → thỏa yêu cầu "database production không public".
+2. **Database:** *New → PostgreSQL* → tên `brewlite-db`, region Singapore, plan Free. Copy **Internal Database URL** (dạng `postgresql://user:pass@host/brewlite`); API chỉ kết nối qua URL nội bộ này. Render PostgreSQL vẫn có External URL, nên vào *brewlite-db → Networking/Access Control* xóa mọi IP được phép (trong `render.yaml`: `ipAllowList: []`) để không máy nào ngoài mạng nội bộ Render kết nối được.
 3. **API:** *New → Web Service → Deploy an existing image* → image `ghcr.io/lhtcoder/brewlite-api:latest` (lần đầu có thể chọn *Build from repo* với Dockerfile `apps/api/Dockerfile`, root `apps/api`). Cấu hình:
    - Port `4000`; Health Check Path `/health`.
-   - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web-00zk.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (lần đầu, sau đó đặt `false`), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
+   - Environment (Secret): `DATABASE_URL`=Internal URL, `DATABASE_SSL=false` (internal) , `JWT_SECRET`=chuỗi ngẫu nhiên ≥ 32 ký tự (`openssl rand -base64 48`), `CORS_ORIGINS=https://brewlite-web-00zk.onrender.com`, `NODE_ENV=production`, `SEED_ON_START=true` (seed idempotent: chạy lại mỗi lần khởi động không tạo trùng dữ liệu; tắt khi vận hành thật), `SWAGGER_ENABLED=true` (tùy chọn để giảng viên xem `/docs`).
    - Settings → **Deploy Hook** → copy URL → lưu vào GitHub Secret `RENDER_DEPLOY_HOOK_API`.
 4. **Web:** tương tự với image `ghcr.io/lhtcoder/brewlite-web:latest`, port `3000`. `NEXT_PUBLIC_API_URL` được nhúng **lúc build** → CD lấy từ GitHub Variable `PRODUCTION_API_URL` và truyền `--build-arg`. Deploy Hook → `RENDER_DEPLOY_HOOK_WEB`.
 5. Nếu dùng image private trên GHCR: Render → *Account Settings → Registry Credentials* thêm GHCR với GitHub PAT (`read:packages`). Đơn giản hơn: đặt package **public** trên GitHub (Packages → Package settings → Change visibility).
@@ -49,7 +49,7 @@ push main / tag v*  →  quality-gate (lint, test, build)  →  build-push (dock
 - Migration là **additive** (thêm bảng/cột, không drop dữ liệu) – quy ước trong `CONTRIBUTING.md`.
 - Entrypoint: `node dist/database/migrate.js` → lỗi ⇒ exit 1 ⇒ Render deploy fail, **bản cũ tiếp tục chạy** (không downtime).
 - Mỗi migration chạy trong transaction (`runMigrations({transaction:'each'})`).
-- Backup trước release lớn: `pg_dump "$DATABASE_URL" > backup-$(date +%F).sql` (Render Dashboard cũng có backup hàng ngày).
+- Backup trước release lớn: `pg_dump "$DATABASE_URL" > backup-$(date +%F).sql`. Gói Free của Render PostgreSQL không có sao lưu tự động; các gói trả phí mới có.
 
 ## 5. Rollback
 
@@ -66,16 +66,17 @@ Migration: nếu bản mới đã thêm migration không tương thích, chạy 
 
 ## 6. Checklist bàn giao (Task 5.4)
 
-- [ ] URL web production HTTPS truy cập được (`PRODUCTION_WEB_URL`)
-- [ ] URL API + `GET /health` trả `{"status":"ok"}` với `version` = SHA mới nhất
-- [ ] Database không public (chỉ Internal URL)
-- [ ] `grep -r "JWT_SECRET=" --include=*.yml --include=*.ts .` chỉ ra `.env.example`; log CI không có secret (GitHub mask)
-- [ ] Release `v1.0.0` + release notes (`docs/sprints/release-notes.md`, GitHub Release)
-- [ ] README có hướng dẫn local/test/build/deploy/rollback
-- [ ] Video demo luồng end-to-end (link trong README)
-- [ ] Sprint Review & Retrospective (`docs/sprints/`)
+- [x] URL web production HTTPS truy cập được: https://brewlite-web-00zk.onrender.com
+- [x] URL API + `GET /health` trả `{"status":"ok"}` với `version` = SHA đã deploy (smoke test kiểm tra)
+- [x] API kết nối DB qua Internal URL; Access Control của DB đặt danh sách IP rỗng (`ipAllowList: []`)
+- [x] Repo không chứa secret production (chỉ giá trị mẫu dev/CI); log CI che secret (GitHub mask)
+- [x] Release `v1.0.0` + release notes (`docs/sprints/release-notes.md`, GitHub Release)
+- [x] README có hướng dẫn local/test/build/deploy/rollback
+- [x] Video demo luồng end-to-end (link trong README)
+- [x] Sprint Review & Retrospective (`docs/sprints/`)
+- [ ] Chạy thử workflow `rollback.yml` trên production (chưa làm)
 
 ## 7. Lưu ý free tier
 
 - Service "ngủ" sau 15 phút không có request → request đầu tiên mất 30–60s. Trước buổi chấm, mở `/health` và `/` trước 2 phút.
-- Render free PostgreSQL hết hạn sau 30 ngày → tạo DB mới, cập nhật `DATABASE_URL`, redeploy (migration + seed tự chạy).
+- Render free PostgreSQL hết hạn sau 30 ngày kể từ khi tạo (có thêm thời gian gia hạn ngắn) → xem ngày hết hạn trên Dashboard trước buổi chấm; nếu sắp hết thì tạo DB mới, cập nhật `DATABASE_URL`, redeploy (migration + seed tự chạy).
