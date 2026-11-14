@@ -24,6 +24,7 @@ Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đ�
 | Video demo | [docs/evidence/video/brewlite-demo.mp4](docs/evidence/video/brewlite-demo.mp4) – luồng end-to-end trên production (quay tự động, có chú thích) |
 
 Tài khoản demo: `customer@brewlite.dev / Customer@123` · nhân viên `staff@brewlite.dev / Staff@123` · quản lý `manager@brewlite.dev / Manager@123`.
+> Đây là tài khoản mẫu do seed tạo để giảng viên chấm thử trên môi trường demo. Khi vận hành thật: tắt seed và Swagger, mật khẩu nhân viên được cấp riêng.
 Mã khuyến mãi: `WELCOME10` (−10 %, tối đa 20k, đơn ≥ 50k), `FREESHIP15K` (−15k, đơn ≥ 100k).
 Thanh toán mô phỏng: thẻ bất kỳ 16 số thành công, **thẻ kết thúc `0002` bị từ chối**; ví hạn mức 500.000đ.
 
@@ -41,7 +42,7 @@ brewlite/
 │   ├── diagrams/             # Task 2: 14 sơ đồ *.puml + *.svg/.png (use-case ×2, activity ×5, sequence ×3, class, state, C4, deployment)
 │   ├── architecture/         # Task 3: architecture.md, adr/001-008
 │   ├── sprints/              # backlog, DoD, sprint review/retro, release notes
-│   ├── evidence/             # ảnh CI/CD, lighthouse...
+│   ├── evidence/             # ảnh CI/CD, video demo, số đo NFR (Lighthouse, autocannon, coverage, audit)
 │   ├── traceability-matrix.md
 │   └── deployment.md
 ├── tests/                    # E2E Playwright
@@ -114,13 +115,13 @@ docker run --rm -p 4000:4000 -e DATABASE_URL=... -e JWT_SECRET=... brewlite-api
 Chi tiết: [docs/deployment.md](./docs/deployment.md) · sơ đồ: [deployment-production.svg](./docs/diagrams/deployment-production.svg)
 
 1. Tạo Render PostgreSQL (private) + 2 Web Service (image từ GHCR), lấy **Deploy Hook**.
-2. Thêm GitHub Secrets: `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB`, `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL`, `NEXT_PUBLIC_API_URL`.
+2. GitHub → *Settings → Secrets and variables → Actions*: **Secrets** `RENDER_DEPLOY_HOOK_API`, `RENDER_DEPLOY_HOOK_WEB`; **Variables** `PRODUCTION_API_URL`, `PRODUCTION_WEB_URL` (workflow đọc `vars.*`; URL API được nhúng vào web lúc build).
 3. Push lên `main` hoặc tag `v1.0.0` → workflow **CD**: quality gate → build image `:<sha>` → push GHCR → deploy hook → smoke test (`scripts/smoke-test.sh`).
 4. **Rollback**: Actions → *Rollback production* → nhập image tag cũ (hoặc Render Dashboard → Events → Rollback).
 
 ## 🔁 Quy trình làm việc
 
-Xem [CONTRIBUTING.md](./CONTRIBUTING.md): Git Flow rút gọn (`main` được bảo vệ, nhánh `feat/…`, `fix/…`, `docs/…`), Conventional Commits, PR template, [Definition of Done](./docs/sprints/definition-of-done.md).
+Xem [CONTRIBUTING.md](./CONTRIBUTING.md): GitHub Flow (`main` được bảo vệ, nhánh ngắn `feat/…`, `fix/…`, `docs/…` merge qua PR), Conventional Commits, PR template, [Definition of Done](./docs/sprints/definition-of-done.md).
 
 ## 📚 Tài liệu bàn giao
 
@@ -134,8 +135,16 @@ Xem [CONTRIBUTING.md](./CONTRIBUTING.md): Git Flow rút gọn (`main` được b
 
 ## 👥 Nhóm thực hiện
 
-| Thành viên | MSSV | Vai trò |
-|---|---|---|
-| | | |
+Nhóm 09:
 
-Giảng viên hướng dẫn: … · Trường Đại học Sài Gòn – Khoa CNTT · HK I 2026–2027
+| Thành viên | MSSV | Phụ trách |
+|---|---|---|
+| Lỡ Hữu Trọng (trưởng nhóm) | 3123480083 | Khai thác yêu cầu, kiến trúc; mã nguồn, CI/CD, triển khai production (có sử dụng AI hỗ trợ); tổng hợp báo cáo |
+| Đỗ Minh Quang | 3123480054 | Task 2: sơ đồ activity; quy trình Scrum, Sprint Review/Retrospective; biên tập báo cáo |
+| Trần Thị Trúc Đào | 3124720015 | Task 1: yêu cầu, sơ đồ và đặc tả use-case |
+| Nguyễn Trường Phát | 3122480043 | Task 2–3: sơ đồ sequence, kiến trúc, ADR, deployment diagram |
+| Lê Đào Bích Phượng | 3123480053 | Task 2: sơ đồ class, state machine, mô hình dữ liệu |
+
+Repo do trưởng nhóm quản lý: các thành viên gửi đặc tả, sơ đồ và góp ý; trưởng nhóm tổng hợp thành commit/PR. Vì vậy lịch sử Git chỉ có một tài khoản.
+
+Giảng viên hướng dẫn: ThS. Từ Lãng Phiêu · Trường Đại học Sài Gòn · HK I 2026–2027

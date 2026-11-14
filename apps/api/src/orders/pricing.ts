@@ -59,7 +59,7 @@ export function applyPromotion(
   return { ok: true, discount };
 }
 
-/** FR-10 Điểm thưởng: 1 điểm cho mỗi 10.000đ thanh toán thành công */
+/** FR-14 Điểm thưởng: 1 điểm cho mỗi 10.000đ thanh toán thành công */
 export function loyaltyPointsFor(total: number): number {
   return Math.floor(total / 10000);
 }

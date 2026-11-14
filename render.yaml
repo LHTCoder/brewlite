@@ -7,6 +7,7 @@ databases:
     region: singapore
     databaseName: brewlite
     user: brewlite
+    ipAllowList: [] # không cho kết nối từ ngoài; API dùng Internal URL
 
 services:
   - type: web

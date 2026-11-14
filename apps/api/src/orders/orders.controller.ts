@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseEnumPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -31,27 +32,29 @@ export class OrdersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'FR-09 Lịch sử đơn của tôi' })
+  @ApiOperation({ summary: 'FR-11 Lịch sử đơn của tôi' })
   findMine(@CurrentUser() user: JwtPayload) {
     return this.service.findMine(user.sub);
   }
 
   @Get('me')
-  @ApiOperation({ summary: 'FR-09 Lịch sử đơn của tôi (endpoint GET /orders/me theo đề bài)' })
+  @ApiOperation({ summary: 'FR-11 Lịch sử đơn của tôi (endpoint GET /orders/me theo đề bài)' })
   findMineAlias(@CurrentUser() user: JwtPayload) {
     return this.service.findMine(user.sub);
   }
 
   @Get('staff/all')
   @Roles(UserRole.STAFF, UserRole.MANAGER)
-  @ApiOperation({ summary: 'FR-11 Nhân viên xem đơn cần xử lý' })
+  @ApiOperation({ summary: 'FR-13 Nhân viên xem đơn cần xử lý' })
   @ApiQuery({ name: 'status', enum: OrderStatus, required: false })
-  findAll(@Query('status') status?: OrderStatus) {
+  findAll(
+    @Query('status', new ParseEnumPipe(OrderStatus, { optional: true })) status?: OrderStatus,
+  ) {
     return this.service.findAllForStaff(status);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'FR-08 Chi tiết / trạng thái đơn' })
+  @ApiOperation({ summary: 'FR-10 Chi tiết / trạng thái đơn' })
   findOne(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() user: JwtPayload,
@@ -61,7 +64,9 @@ export class OrdersController {
 
   @Patch(':id/status')
   @Roles(UserRole.STAFF, UserRole.MANAGER)
-  @ApiOperation({ summary: 'FR-11 Cập nhật trạng thái đơn (PAID→PREPARING→READY→COMPLETED)' })
+  @ApiOperation({
+    summary: 'FR-13 Nhân viên cập nhật trạng thái đơn (chỉ PAID→PREPARING→READY→COMPLETED)',
+  })
   updateStatus(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: UpdateOrderStatusDto,
@@ -71,7 +76,7 @@ export class OrdersController {
   }
 
   @Post(':id/cancel')
-  @ApiOperation({ summary: 'Hủy đơn chưa thanh toán (hoàn tồn kho)' })
+  @ApiOperation({ summary: 'FR-12 Hủy đơn chưa thanh toán (hoàn tồn kho)' })
   cancel(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @CurrentUser() user: JwtPayload,

@@ -9,6 +9,7 @@ build/
 .next/
 out/
 coverage/
+coverage-integration/
 *.tsbuildinfo
 
 # Environment / secrets (NEVER commit real secrets)

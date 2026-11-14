@@ -45,12 +45,24 @@ export enum LoyaltyTransactionType {
   REDEEM = 'REDEEM',
 }
 
-/** Máy trạng thái đơn hàng: trạng thái hiện tại -> các trạng thái hợp lệ tiếp theo */
+/**
+ * Máy trạng thái đơn hàng: trạng thái hiện tại -> các trạng thái hợp lệ tiếp theo.
+ * - PENDING -> PAID: chỉ do PaymentsService khi thanh toán thành công.
+ * - PENDING -> CANCELLED: chỉ qua POST /orders/:id/cancel (hoàn tồn kho).
+ * - Đơn đã PAID không hủy trên hệ thống (MVP chưa có hoàn tiền).
+ */
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
-  [OrderStatus.PAID]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+  [OrderStatus.PAID]: [OrderStatus.PREPARING],
   [OrderStatus.PREPARING]: [OrderStatus.READY],
   [OrderStatus.READY]: [OrderStatus.COMPLETED],
   [OrderStatus.COMPLETED]: [],
   [OrderStatus.CANCELLED]: [],
 };
+
+/** Các trạng thái nhân viên quầy được đặt qua PATCH /orders/:id/status (FR-13) */
+export const STAFF_SETTABLE_STATUSES: OrderStatus[] = [
+  OrderStatus.PREPARING,
+  OrderStatus.READY,
+  OrderStatus.COMPLETED,
+];

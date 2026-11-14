@@ -1,4 +1,4 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseEnumPipe, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { ProductCategory } from '../common/enums';
@@ -13,7 +13,11 @@ export class ProductsController {
   @ApiQuery({ name: 'category', enum: ProductCategory, required: false })
   @ApiQuery({ name: 'q', required: false })
   @ApiOkResponse({ description: 'Danh sách sản phẩm đang bán' })
-  findAll(@Query('category') category?: ProductCategory, @Query('q') q?: string) {
+  findAll(
+    @Query('category', new ParseEnumPipe(ProductCategory, { optional: true }))
+    category?: ProductCategory,
+    @Query('q') q?: string,
+  ) {
     return this.service.findAll({ category, q });
   }
 

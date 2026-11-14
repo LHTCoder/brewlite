@@ -1,0 +1,38 @@
+{
+  "products": {
+    "url": "http://localhost:4000/products",
+    "connections": 50,
+    "duration_s": 20.04,
+    "requests": 13996,
+    "rps_avg": 699.8,
+    "latency_ms": {
+      "average": 70.87,
+      "p50": 65,
+      "p90": 94,
+      "p97_5": 117,
+      "p99": 141,
+      "max": 247
+    },
+    "errors": 0,
+    "non2xx": 0,
+    "finish": "2026-11-14T16:16:40.290Z"
+  },
+  "detail": {
+    "url": "http://localhost:4000/products/d1abd9ee-2c5c-4c9e-b35d-b0b556cd7b5c",
+    "connections": 50,
+    "duration_s": 20.04,
+    "requests": 18212,
+    "rps_avg": 910.6,
+    "latency_ms": {
+      "average": 54.34,
+      "p50": 51,
+      "p90": 70,
+      "p97_5": 86,
+      "p99": 93,
+      "max": 115
+    },
+    "errors": 0,
+    "non2xx": 0,
+    "finish": "2026-11-14T16:17:00.860Z"
+  }
+}

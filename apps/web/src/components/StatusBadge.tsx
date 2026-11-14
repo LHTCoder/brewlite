@@ -18,7 +18,7 @@ export function StatusBadge({ status }: { status: OrderStatus }) {
   );
 }
 
-/** Thanh tiến trình trạng thái đơn (FR-08) */
+/** Thanh tiến trình trạng thái đơn (FR-10) */
 export function StatusTimeline({ status }: { status: OrderStatus }) {
   const steps: OrderStatus[] = ['PAID', 'PREPARING', 'READY', 'COMPLETED'];
   if (status === 'CANCELLED') return null;

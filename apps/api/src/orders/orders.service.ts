@@ -6,7 +6,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
@@ -14,7 +14,7 @@ import { Product } from '../products/product.entity';
 import { Promotion } from '../promotions/promotion.entity';
 import { User } from '../users/user.entity';
 import { CreateOrderDto } from './dto/create-order.dto';
-import { ORDER_TRANSITIONS, OrderStatus, UserRole } from '../common/enums';
+import { ORDER_TRANSITIONS, OrderStatus, STAFF_SETTABLE_STATUSES, UserRole } from '../common/enums';
 import { applyPromotion, computeLineTotal, computeUnitPrice, generateOrderCode } from './pricing';
 import { JwtPayload } from '../auth/auth.service';
 
@@ -28,7 +28,7 @@ export class OrdersService {
   ) {}
 
   /**
-   * FR-06 Tạo đơn hàng.
+   * FR-06 Tạo đơn hàng (kèm FR-05 kiểm tra tồn kho, FR-07 khuyến mãi).
    * Chạy trong 1 transaction: khóa dòng sản phẩm (FOR UPDATE), kiểm tra tồn kho,
    * tính lại giá ở server (không tin client), trừ tồn kho, lưu đơn.
    */
@@ -39,6 +39,16 @@ export class OrdersService {
 
       const items: OrderItem[] = [];
       let subtotal = 0;
+
+      // Khóa tất cả sản phẩm của giỏ một lần, theo thứ tự id cố định,
+      // để hai đơn đồng thời có cùng món (thứ tự khác nhau) không bị deadlock.
+      const productIds = [...new Set(dto.items.map((l) => l.productId))].sort();
+      await manager
+        .createQueryBuilder(Product, 'p')
+        .setLock('pessimistic_write')
+        .where('p.id IN (:...ids)', { ids: productIds })
+        .orderBy('p.id', 'ASC')
+        .getMany();
 
       for (const line of dto.items) {
         const product = await manager
@@ -137,7 +147,7 @@ export class OrdersService {
     });
   }
 
-  /** FR-09 Lịch sử đơn của khách (mới nhất trước) */
+  /** FR-11 Lịch sử đơn của khách (mới nhất trước) */
   findMine(userId: string): Promise<Order[]> {
     return this.orders.find({
       where: { user: { id: userId } },
@@ -146,7 +156,7 @@ export class OrdersService {
     });
   }
 
-  /** Nhân viên/quản lý xem tất cả đơn đang xử lý */
+  /** FR-13 Nhân viên/quản lý xem đơn (lọc theo trạng thái nếu có) */
   findAllForStaff(status?: OrderStatus): Promise<Order[]> {
     return this.orders.find({
       where: status ? { status } : {},
@@ -173,25 +183,35 @@ export class OrdersService {
     return order;
   }
 
-  /** FR-11 Quản lý trạng thái đơn theo máy trạng thái */
+  /**
+   * FR-13 Nhân viên cập nhật trạng thái đơn tại quầy: chỉ PAID→PREPARING→READY→COMPLETED.
+   * PAID chỉ do thanh toán tạo ra; hủy đơn phải đi qua cancel() để hoàn tồn kho.
+   */
   async updateStatus(id: string, next: OrderStatus, actor: JwtPayload): Promise<Order> {
-    const order = await this.findOneForUser(id, actor);
-    const from = order.status;
-    this.assertTransition(from, next);
-    order.status = next;
-    const saved = await this.orders.save(order);
-    this.logger.log(`Order ${order.code}: ${from} -> ${next} by ${actor.email}`);
-    return saved;
+    if (!STAFF_SETTABLE_STATUSES.includes(next)) {
+      throw new BadRequestException(
+        `Nhân viên chỉ được chuyển đơn sang ${STAFF_SETTABLE_STATUSES.join(', ')}`,
+      );
+    }
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const order = await this.lockOrder(manager, id);
+      const from = order.status;
+      this.assertTransition(from, next);
+      await manager.update(Order, { id }, { status: next });
+      this.logger.log(`Order ${order.code}: ${from} -> ${next} by ${actor.email}`);
+      return order;
+    });
+    return this.findOneForUser(saved.id, actor);
   }
 
-  /** Khách hủy đơn khi chưa thanh toán – hoàn tồn kho */
+  /** FR-12 Hủy đơn khi còn PENDING – hoàn tồn kho */
   async cancel(id: string, actor: JwtPayload): Promise<Order> {
-    return this.dataSource.transaction(async (manager) => {
-      const repo = manager.getRepository(Order);
-      const order = await this.findOneForUser(id, actor, repo);
-      const allowedForCustomer = order.status === OrderStatus.PENDING;
-      const isStaff = actor.role !== UserRole.CUSTOMER;
-      if (!isStaff && !allowedForCustomer) {
+    await this.dataSource.transaction(async (manager) => {
+      // Khóa dòng đơn trước khi đọc trạng thái: nếu khách bấm hủy đúng lúc đang thanh toán,
+      // một trong hai thao tác phải chờ thao tác kia xong rồi mới kiểm tra lại trạng thái.
+      const locked = await this.lockOrder(manager, id);
+      const order = await this.findOneForUser(locked.id, actor, manager.getRepository(Order));
+      if (order.status !== OrderStatus.PENDING) {
         throw new BadRequestException('Chỉ có thể hủy đơn chưa thanh toán');
       }
       this.assertTransition(order.status, OrderStatus.CANCELLED);
@@ -200,9 +220,21 @@ export class OrdersService {
           await manager.increment(Product, { id: item.product.id }, 'stock', item.quantity);
         }
       }
-      order.status = OrderStatus.CANCELLED;
-      return repo.save(order);
+      await manager.update(Order, { id }, { status: OrderStatus.CANCELLED });
+      this.logger.log(`Order ${order.code}: PENDING -> CANCELLED by ${actor.email}`);
     });
+    return this.findOneForUser(id, actor);
+  }
+
+  /** Khóa dòng orders (SELECT … FOR UPDATE) trong transaction hiện tại */
+  private async lockOrder(manager: EntityManager, id: string): Promise<Order> {
+    const order = await manager
+      .createQueryBuilder(Order, 'o')
+      .setLock('pessimistic_write')
+      .where('o.id = :id', { id })
+      .getOne();
+    if (!order) throw new NotFoundException('Không tìm thấy đơn hàng');
+    return order;
   }
 
   assertTransition(from: OrderStatus, to: OrderStatus) {

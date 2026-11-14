@@ -43,7 +43,7 @@ export default function MenuPage() {
     <>
       <Header title="BrewLite" />
       <section className="px-4 pt-3">
-        <p className="text-sm text-brew-500">Đặt trước – nhận tại quầy, không cần xếp hàng ☕</p>
+        <p className="text-sm text-brew-700">Đặt trước – nhận tại quầy, không cần xếp hàng ☕</p>
         <label className="sr-only" htmlFor="search">
           Tìm món
         </label>

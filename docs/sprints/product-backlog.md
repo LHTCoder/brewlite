@@ -1,15 +1,18 @@
 # Product Backlog & Sprint Planning
 
-> Issue board thực tế: GitHub Projects (Kanban) của repo – cột **Backlog → Sprint → In progress → In review → Done**. Mỗi dòng dưới đây tương ứng một GitHub Issue (nhãn `sprint-1` / `sprint-2`, `type:feature|docs|infra|test`).
+> Product Backlog được quản lý bằng chính file markdown này trong repo (có lịch sử thay đổi qua Git). Nhóm không dùng GitHub Issues/Projects; cột "Mục" dưới đây là mã công việc nội bộ (S1-x, S2-x), không phải số issue/PR trên GitHub.
 
-## Thành viên & vai trò (điền tên nhóm)
+## Thành viên & vai trò
 
 | Thành viên | MSSV | Vai trò chính |
 |---|---|---|
-| <Thành viên 1> | | Scrum Master / Backend (NestJS) |
-| <Thành viên 2> | | Frontend (Next.js) |
-| <Thành viên 3> | | DevOps (Docker, CI/CD, Render) + Tester |
-| <Thành viên 4> | | Tài liệu (SRS, sơ đồ) + QA |
+| Lỡ Hữu Trọng (trưởng nhóm) | 3123480083 | Khai thác yêu cầu, kiến trúc; mã nguồn, CI/CD, triển khai production (có sử dụng AI hỗ trợ); tổng hợp báo cáo; quản lý repo |
+| Đỗ Minh Quang | 3123480054 | Task 2: sơ đồ activity; điều phối quy trình Scrum, Sprint Review/Retrospective |
+| Trần Thị Trúc Đào | 3124720015 | Task 1: yêu cầu, sơ đồ và đặc tả use-case |
+| Nguyễn Trường Phát | 3122480043 | Task 2–3: sơ đồ sequence, kiến trúc, ADR, deployment diagram |
+| Lê Đào Bích Phượng | 3123480053 | Task 2: sơ đồ class, state machine, mô hình dữ liệu |
+
+> **Về thời gian:** kế hoạch chia công việc thành 2 Sprint như bên dưới. Phần mã nguồn được hoàn thành trong thời gian ngắn và trưởng nhóm đẩy lên GitHub tập trung theo đúng thứ tự Task vào ngày 06/11/2026, nên ngày giờ trên GitHub là thời điểm đẩy lên, không phải tiến độ từng Sprint. Bản trước của file này ghi "mỗi Sprint 2 tuần"; nhóm đã bỏ con số đó vì không khớp với lịch sử thực tế.
 
 ## User Stories (ưu tiên MoSCoW, ước lượng story point)
 
@@ -35,32 +38,32 @@
 | US-16 | Là quản lý, tôi muốn sửa menu/giá/tồn kho trên giao diện | FR-16 | Could | 8 | Backlog |
 | US-17 | Là khách, tôi muốn nhận thông báo khi đơn sẵn sàng | FR-17 | Won't | 5 | Backlog |
 
-## Sprint 1 (2 tuần) – Sprint Goal: *Nền tảng kỹ thuật, tài liệu có kiểm soát phiên bản và MVP xem menu chạy được*
+## Sprint 1 – Sprint Goal: *Nền tảng kỹ thuật, tài liệu có kiểm soát phiên bản và MVP xem menu chạy được*
 
-| Issue | Nội dung | Phụ trách | DoD |
+| Mục | Nội dung | Phụ trách | DoD |
 |---|---|---|---|
-| #1 | Khởi tạo monorepo, README, .gitignore, .env.example, CONTRIBUTING, DoD | TV1 | merge main |
-| #2 | docs/requirements (context-and-scope, srs, use-case-checkout) | TV4 | review 1 người |
-| #3 | docs/diagrams (.puml + .svg) activity, sequence, class, use-case | TV4 | render được |
-| #4 | docs/architecture (architecture.md, ADR 001–008), deployment diagram, deployment.md | TV1, TV3 | review |
-| #5 | API: entity, migration, seed, `GET /products`, `GET /products/:id`, `/health`, unit test | TV1 | CI xanh |
-| #6 | Web: layout mobile-first, menu, loading/empty/error, ProductCard test | TV2 | CI xanh |
-| #7 | CI workflow (install→lint→test→build), branch protection | TV3 | PR bị chặn khi lỗi |
-| #8 | Dockerfile api/web + docker-compose | TV3 | `docker compose up` chạy |
+| S1-1 | Khởi tạo monorepo, README, .gitignore, .env.example, CONTRIBUTING, DoD | Trọng | merge main |
+| S1-2 | docs/requirements (context-and-scope, srs, use-case-checkout) | Đào | nhóm góp ý |
+| S1-3 | docs/diagrams (.puml + .svg) activity, sequence, class, use-case | Quang, Phát, Phượng | render được |
+| S1-4 | docs/architecture (architecture.md, ADR 001–008), deployment diagram, deployment.md | Phát, Trọng | review |
+| S1-5 | API: entity, migration, seed, `GET /products`, `GET /products/:id`, `/health`, unit test | Trọng | CI xanh |
+| S1-6 | Web: layout mobile-first, menu, loading/empty/error, ProductCard test | Trọng | CI xanh |
+| S1-7 | CI workflow (install→lint→test→build), branch protection | Trọng | PR bị chặn khi lỗi |
+| S1-8 | Dockerfile api/web + docker-compose | Trọng | `docker compose up` chạy |
 
 **Sprint 1 velocity dự kiến:** 26 SP.
 
-## Sprint 2 (2 tuần) – Sprint Goal: *Hoàn thành luồng end-to-end, tự động hóa đóng gói và triển khai production truy cập được*
+## Sprint 2 – Sprint Goal: *Hoàn thành luồng end-to-end, tự động hóa đóng gói và triển khai production truy cập được*
 
-| Issue | Nội dung | Phụ trách |
+| Mục | Nội dung | Phụ trách |
 |---|---|---|
-| #9 | Chi tiết sản phẩm UI + giỏ hàng (Zustand) | TV2 |
-| #10 | Auth API (register/login/JWT/guard/roles) + AuthForm | TV1, TV2 |
-| #11 | Orders API (transaction, tồn kho, pricing, promotion) | TV1 |
-| #12 | Payments API (mock gateway, idempotency, loyalty) | TV1 |
-| #13 | Checkout UI, order detail, orders list, account, staff board | TV2 |
-| #14 | Integration test (products, checkout), E2E Playwright | TV3, TV4 |
-| #15 | CD workflow (GHCR, Render deploy hook, smoke test), rollback workflow | TV3 |
-| #16 | Traceability matrix, release notes, Sprint Review/Retro, video demo | TV4 |
+| S2-1 | Chi tiết sản phẩm UI + giỏ hàng (Zustand) | Trọng |
+| S2-2 | Auth API (register/login/JWT/guard/roles) + AuthForm | Trọng |
+| S2-3 | Orders API (transaction, tồn kho, pricing, promotion) | Trọng |
+| S2-4 | Payments API (mock gateway, idempotency, loyalty) | Trọng |
+| S2-5 | Checkout UI, order detail, orders list, account, staff board | Trọng |
+| S2-6 | Integration test (products, checkout), E2E Playwright | Trọng |
+| S2-7 | CD workflow (GHCR, Render deploy hook, smoke test), rollback workflow | Trọng |
+| S2-8 | Traceability matrix, release notes, Sprint Review/Retro, video demo | Quang, Trọng |
 
 **Sprint 2 velocity dự kiến:** 50 SP (các story lớn đã được chuẩn bị nền ở Sprint 1).

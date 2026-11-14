@@ -10,7 +10,7 @@ import { Header } from '@/components/Header';
 import { StatusBadge } from '@/components/StatusBadge';
 import { EmptyState, ErrorState, Skeleton } from '@/components/States';
 
-/** FR-09 Lịch sử đơn hàng */
+/** FR-11 Lịch sử đơn hàng */
 export default function OrdersPage() {
   const { user, hydrated } = useAuth();
   const router = useRouter();

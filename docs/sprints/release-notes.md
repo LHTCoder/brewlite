@@ -1,4 +1,22 @@
-# BrewLite v1.0.0 – Release Notes
+# BrewLite – Release Notes
+
+## Thay đổi trên `main` sau v1.0.0 (chưa gắn tag mới)
+
+Mỗi lần merge vào `main`, CD tự triển khai lên production, nên production chạy commit mới nhất của `main` (xem trường `version` trong `/health`), không còn đúng bản `v1.0.0`.
+
+| PR | Ngày merge | Nội dung |
+|---|---|---|
+| #13 | 06/11/2026 | Video demo production, cập nhật Sprint Review theo thực tế |
+| #14 | 10/11/2026 | Chỉnh sơ đồ và đánh số use-case UC-1…UC-13 theo góp ý của nhóm |
+| #15 | 10/11/2026 | Sơ đồ use-case dùng ký hiệu actor người que |
+| #16 | 10/11/2026 | Vẽ lại 5 sơ đồ activity bằng PlantUML 1.2026.9 |
+| #17 | 10/11/2026 | Sơ đồ activity không còn đường nối đè lên ô |
+| #18 | 13/11/2026 | Video demo khung dọc 9:16 |
+| #19 | 15/11/2026 | Sửa lỗi theo phản biện nội bộ: giới hạn PATCH trạng thái của nhân viên, khóa đơn khi hủy, chống deadlock, timeout 503, validate query; nâng Next.js 14.2.35; số đo NFR; đồng bộ tài liệu |
+
+---
+
+# BrewLite v1.0.0
 
 **Ngày phát hành:** 06/11/2026 · **Tag:** `v1.0.0` · **Image:** `ghcr.io/lhtcoder/brewlite-api:1.0.0`, `ghcr.io/lhtcoder/brewlite-web:1.0.0`
 

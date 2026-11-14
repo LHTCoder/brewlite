@@ -78,7 +78,7 @@ Hệ thống giải quyết ba bài toán cốt lõi: (1) rút ngắn thời gia
 | C-02 | Cấu trúc repo `apps/web`, `apps/api`, `docs`, `tests`, `.github/workflows`. | Đề bài §9 |
 | C-03 | Mọi tạo phẩm (tài liệu, sơ đồ, code) phải đi qua commit/PR; CI chặn merge khi lint/test/build lỗi. | Đề bài §6.2, §6.4 |
 | C-04 | Có URL production HTTPS tại thời điểm chấm; DB không public; secret không nằm trong repo/log. | Đề bài §7.4 |
-| C-05 | Thời gian: 2 Sprint (mỗi Sprint 2 tuần); nhóm 3–4 sinh viên làm ngoài giờ học. | Môn học |
+| C-05 | Thời gian: 2 Sprint trong học kỳ; nhóm 5 sinh viên làm ngoài giờ học. | Môn học |
 | C-06 | Ngân sách hạ tầng = 0đ (free tier). | Nhóm |
 
 ## 6. Rủi ro ban đầu

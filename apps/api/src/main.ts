@@ -14,7 +14,7 @@ async function bootstrap() {
   app.use(helmet());
   app.enableCors({
     origin: config.get<string[]>('corsOrigins'),
-    credentials: true,
+    credentials: false, // dùng Bearer token, không dùng cookie
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key'],
   });
   // Validate + strip field lạ (NFR-02) ở mọi endpoint

@@ -11,12 +11,15 @@ export class CreatePaymentDto {
   @IsEnum(PaymentMethod, { message: 'Phương thức thanh toán phải là WALLET hoặc CARD' })
   method: PaymentMethod;
 
-  @ApiProperty({
-    description: 'Khóa idempotency do client sinh (UUID). Gửi lại cùng khóa -> trả kết quả cũ.',
+  @ApiPropertyOptional({
+    description:
+      'Khóa idempotency do client sinh (UUID). Gửi lại cùng khóa -> trả kết quả cũ. ' +
+      'Có thể gửi qua header Idempotency-Key thay cho trường này.',
   })
+  @IsOptional()
   @IsString()
   @Length(8, 100)
-  idempotencyKey: string;
+  idempotencyKey?: string;
 
   @ApiPropertyOptional({ example: '4242 4242 4242 4242', description: 'Bắt buộc khi method=CARD' })
   @IsOptional()

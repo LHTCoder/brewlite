@@ -5,8 +5,8 @@ import { randomUUID } from 'crypto';
 import { createTestApp, resetTransactionalData } from './setup-db';
 
 /**
- * INT-T03..INT-T09: luồng UC-10 Đặt và thanh toán đơn hàng
- * (auth -> tạo đơn -> thanh toán -> idempotency -> trạng thái -> lịch sử)
+ * INT-T03..INT-T16: luồng UC-10 Đặt và thanh toán đơn hàng
+ * (auth -> tạo đơn -> thanh toán -> idempotency -> trạng thái -> lịch sử -> đồng thời)
  */
 describe('Checkout flow (integration)', () => {
   let app: INestApplication;
@@ -259,5 +259,112 @@ describe('Checkout flow (integration)', () => {
     expect(res.body.status).toBe('CANCELLED');
     const after = await ds.query('SELECT stock FROM products WHERE id = $1', [milkTea.id]);
     expect(after[0].stock).toBe(before[0].stock);
+  });
+
+  const newOrder = async (quantity = 1) => {
+    const res = await http()
+      .post('/orders')
+      .set(auth(token))
+      .send({ items: [{ productId: milkTea.id, sizeId: milkTea.sizes[0].id, quantity }] })
+      .expect(201);
+    return res.body.id as string;
+  };
+
+  it('INT-T13 nhân viên không thể PATCH đơn sang PAID hay CANCELLED; đơn PAID không hủy được', async () => {
+    const id = await newOrder();
+    await http()
+      .patch(`/orders/${id}/status`)
+      .set(auth(staffToken))
+      .send({ status: 'PAID' })
+      .expect(400);
+    await http()
+      .patch(`/orders/${id}/status`)
+      .set(auth(staffToken))
+      .send({ status: 'CANCELLED' })
+      .expect(400);
+    const order = await http().get(`/orders/${id}`).set(auth(token)).expect(200);
+    expect(order.body.status).toBe('PENDING');
+    expect(order.body.payment).toBeNull();
+
+    await http()
+      .post('/payments')
+      .set(auth(token))
+      .send({ orderId: id, method: 'WALLET', idempotencyKey: randomUUID() })
+      .expect(201);
+    await http().post(`/orders/${id}/cancel`).set(auth(staffToken)).expect(400);
+  });
+
+  it('INT-T14 hủy và thanh toán cùng lúc: không có đơn CANCELLED mà tiền đã trừ', async () => {
+    for (let i = 0; i < 5; i++) {
+      const id = await newOrder();
+      const [pay, cancel] = await Promise.all([
+        http()
+          .post('/payments')
+          .set(auth(token))
+          .send({ orderId: id, method: 'WALLET', idempotencyKey: randomUUID() }),
+        http().post(`/orders/${id}/cancel`).set(auth(token)),
+      ]);
+      const order = await http().get(`/orders/${id}`).set(auth(token)).expect(200);
+      if (order.body.status === 'CANCELLED') {
+        expect(cancel.status).toBe(201);
+        expect(pay.status).toBe(400);
+        expect(order.body.payment).toBeNull();
+      } else {
+        expect(order.body.status).toBe('PAID');
+        expect(order.body.payment.status).toBe('SUCCEEDED');
+        expect(cancel.status).toBe(400);
+      }
+    }
+  });
+
+  it('INT-T15 hai đơn đồng thời cùng món nhưng khác thứ tự: không deadlock, không lỗi 500', async () => {
+    const products = await http().get('/products?category=COFFEE').expect(200);
+    const [a, b] = products.body.filter((p: { stock: number }) => p.stock > 10);
+    const line = (p: { id: string; sizes: { id: string }[] }) => ({
+      productId: p.id,
+      sizeId: p.sizes[0]?.id,
+      quantity: 1,
+    });
+    const results = await Promise.all(
+      Array.from({ length: 6 }, (_, i) =>
+        http()
+          .post('/orders')
+          .set(auth(token))
+          .send({ items: i % 2 ? [line(a), line(b)] : [line(b), line(a)] }),
+      ),
+    );
+    expect(results.map((r) => r.status)).toEqual(Array(6).fill(201));
+  });
+
+  it('INT-T16 tham số lọc sai -> 400 (không phải 500); khóa idempotency qua header', async () => {
+    await http().get('/products?category=FOO').expect(400);
+    await http().get('/orders/staff/all?status=FOO').set(auth(staffToken)).expect(400);
+
+    const id = await newOrder();
+    await http()
+      .post('/payments')
+      .set(auth(token))
+      .send({ orderId: id, method: 'WALLET' })
+      .expect(400); // thiếu khóa ở cả header và body
+    const key = randomUUID();
+    const first = await http()
+      .post('/payments')
+      .set(auth(token))
+      .set('Idempotency-Key', key)
+      .send({ orderId: id, method: 'WALLET' })
+      .expect(201);
+    const replay = await http()
+      .post('/payments')
+      .set(auth(token))
+      .set('Idempotency-Key', key)
+      .send({ orderId: id, method: 'WALLET' })
+      .expect(201);
+    expect(replay.body.id).toBe(first.body.id);
+    await http()
+      .post('/payments')
+      .set(auth(token))
+      .set('Idempotency-Key', 'x'.repeat(150))
+      .send({ orderId: id, method: 'WALLET' })
+      .expect(400);
   });
 });

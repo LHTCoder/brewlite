@@ -15,9 +15,9 @@ export class LoyaltyController {
     @InjectRepository(LoyaltyTransaction) private readonly repo: Repository<LoyaltyTransaction>,
   ) {}
 
-  /** FR-10 Lịch sử tích điểm */
+  /** FR-14 Lịch sử tích điểm */
   @Get('transactions')
-  @ApiOperation({ summary: 'FR-10 Lịch sử điểm thưởng của tôi' })
+  @ApiOperation({ summary: 'FR-14 Lịch sử điểm thưởng của tôi' })
   mine(@CurrentUser() user: JwtPayload) {
     return this.repo.find({
       where: { user: { id: user.sub } },

@@ -7,13 +7,16 @@ skinparam state {
   BorderColor #8A5733
 }
 [*] --> PENDING : POST /orders\n(trừ tồn kho)
-PENDING --> PAID : POST /payments\nSUCCEEDED
+PENDING --> PAID : POST /payments\nSUCCEEDED\n(chỉ do thanh toán)
 PENDING --> PENDING : POST /payments\nFAILED (giữ đơn, thử lại)
-PENDING --> CANCELLED : khách / nhân viên hủy\n(hoàn tồn kho)
-PAID --> PREPARING : nhân viên bắt đầu pha chế
-PAID --> CANCELLED : nhân viên hủy\n(hoàn tồn kho)
-PREPARING --> READY : pha chế xong
-READY --> COMPLETED : khách đã nhận
+PENDING --> CANCELLED : POST /orders/:id/cancel\nkhách / nhân viên hủy\n(hoàn tồn kho)
+PAID --> PREPARING : nhân viên bắt đầu pha chế\n(PATCH /status)
+PREPARING --> READY : pha chế xong\n(PATCH /status)
+READY --> COMPLETED : khách đã nhận\n(PATCH /status)
 COMPLETED --> [*]
 CANCELLED --> [*]
+note right of PAID
+  Đơn đã thanh toán không hủy trên hệ thống
+  (MVP chưa có hoàn tiền)
+end note
 @enduml

@@ -46,7 +46,7 @@ export default function AccountPage() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-brew-100 text-2xl">👤</div>
           <div>
             <h2 className="font-bold">{user.fullName}</h2>
-            <p className="text-sm text-brew-500">{user.email}</p>
+            <p className="text-sm text-brew-700">{user.email}</p>
             <p className="text-xs text-brew-400">Vai trò: {user.role}</p>
           </div>
         </section>

@@ -20,5 +20,5 @@
 
 | Điều tốt (Keep) | Điều chưa tốt (Problem) | Hành động (Try) |
 |---|---|---|
-| Tài liệu và sơ đồ `.puml` nằm cùng repo, thay đổi qua PR | Workflow CI chỉ tự chạy trên pull request sau khi `ci.yml` đã có trên `main`, nên PR đầu tiên của Sprint 1 chưa được CI kiểm tra | Đưa CI vào `main` sớm nhất có thể |
+| Tài liệu và sơ đồ `.puml` nằm cùng repo, thay đổi qua PR | PR #1–#4 được merge khi chưa có kết quả CI đính kèm (`ci.yml` được thêm trong chính PR #4) | Đưa CI vào `main` sớm nhất có thể; từ PR #5 trở đi mọi PR đều có CI |
 | CI chặn được PR có test sai (PR #5) | Branch protection bật sau khi đã merge PR #4 | Bật branch protection (bắt buộc check API, Web) trước khi bắt đầu Sprint 2 |
