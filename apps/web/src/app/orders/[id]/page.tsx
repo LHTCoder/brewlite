@@ -10,7 +10,7 @@ import { StatusBadge, StatusTimeline } from '@/components/StatusBadge';
 import { ErrorState, Skeleton } from '@/components/States';
 import { useToast } from '@/components/Toast';
 
-/** FR-08 Xác nhận đơn + theo dõi trạng thái (tự làm mới mỗi 10s khi đơn đang xử lý) */
+/** FR-10 Xác nhận đơn + theo dõi trạng thái (tự làm mới mỗi 10s khi đơn đang xử lý) */
 function OrderDetailInner() {
   const { id } = useParams<{ id: string }>();
   const params = useSearchParams();

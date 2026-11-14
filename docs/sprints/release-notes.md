@@ -12,7 +12,8 @@ Mỗi lần merge vào `main`, CD tự triển khai lên production, nên produc
 | #16 | 10/11/2026 | Vẽ lại 5 sơ đồ activity bằng PlantUML 1.2026.9 |
 | #17 | 10/11/2026 | Sơ đồ activity không còn đường nối đè lên ô |
 | #18 | 13/11/2026 | Video demo khung dọc 9:16 |
-| #19 | 15/11/2026 | Sửa lỗi theo phản biện nội bộ: giới hạn PATCH trạng thái của nhân viên, khóa đơn khi hủy, chống deadlock, timeout 503, validate query; nâng Next.js 14.2.35; số đo NFR; đồng bộ tài liệu |
+| #19 | 14/11/2026 | Sửa lỗi theo phản biện nội bộ: giới hạn PATCH trạng thái của nhân viên, khóa đơn khi hủy, chống deadlock, timeout 503, validate query; nâng Next.js 14.2.35; số đo NFR; đồng bộ tài liệu |
+| #20 | 15/11/2026 | Sửa ngày merge PR #19 trong release notes; chú thích mã FR ở trang chi tiết đơn khớp SRS (FR-10) |
 
 ---
 
