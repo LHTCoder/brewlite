@@ -27,7 +27,7 @@ Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đ�
 | API | https://brewlite-api-t8xs.onrender.com |
 | Health check | https://brewlite-api-t8xs.onrender.com/health |
 | Swagger | https://brewlite-api-t8xs.onrender.com/docs |
-| Video demo | [docs/evidence/video/brewlite-demo.mp4](docs/evidence/video/brewlite-demo.mp4) – luồng end-to-end trên production (quay tự động, có chú thích) |
+| Video demo | [docs/evidence/video/brewlite-demo.mp4](docs/evidence/video/brewlite-demo.mp4) – luồng end-to-end gồm thanh toán bằng mã QR, màn hình quầy và trang Quản lý (quay tự động, có chú thích, 87 giây) |
 
 Tài khoản demo: `customer@brewlite.dev / Customer@123` · nhân viên `staff@brewlite.dev / Staff@123` · quản lý `manager@brewlite.dev / Manager@123`.
 > Đây là tài khoản mẫu do seed tạo để giảng viên chấm thử trên môi trường demo. Khi vận hành thật: tắt seed và Swagger, mật khẩu nhân viên được cấp riêng.
