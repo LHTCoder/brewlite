@@ -12,6 +12,8 @@ import { fileURLToPath } from 'node:url';
 
 const WEB = process.env.WEB_URL ?? 'http://localhost:3000';
 const API = process.env.API_URL ?? 'http://localhost:4000';
+// Nhãn môi trường hiện ở chú thích đầu video, ví dụ DEMO_ENV="production, HTTPS"
+const ENV_LABEL = process.env.DEMO_ENV ?? (WEB.startsWith('https://') ? 'production, HTTPS' : 'chạy local');
 const OUT = process.env.OUT_DIR ?? join(dirname(fileURLToPath(import.meta.url)), '..', 'docs', 'evidence', 'video');
 mkdirSync(OUT, { recursive: true });
 
@@ -66,7 +68,7 @@ async function step(name, fn) {
 await step('Mở menu', async () => {
   await page.goto(WEB);
   await page.getByTestId('product-card').first().waitFor();
-  await caption('BrewLite – đặt đồ uống trước, nhận tại quầy. Bước 1: Xem menu (production, HTTPS)', 3500);
+  await caption(`BrewLite – đặt đồ uống trước, nhận tại quầy. Bước 1: Xem menu (${ENV_LABEL})`, 3500);
   await page.mouse.wheel(0, 500); await pause(1200); await page.mouse.wheel(0, -500);
   await page.getByRole('button', { name: 'Trà sữa', exact: true }).click();
   await caption('Lọc theo danh mục “Trà sữa”');
@@ -150,6 +152,7 @@ await step('Màn hình quầy', async () => {
   await caption('Nhân viên bấm “Bắt đầu pha chế” → PREPARING');
   await card.getByRole('button', { name: /Đã xong/ }).click();
   await caption('Pha xong, bấm “Đã xong – gọi khách” → READY', 2600);
+  await caption('Tài khoản quầy chỉ có Quầy và Tài khoản: chỉ nhận đơn, duyệt trạng thái, không mua hàng', 3200);
 });
 
 await step('Khách thấy cập nhật', async () => {
@@ -164,10 +167,31 @@ await step('Khách thấy cập nhật', async () => {
 });
 
 await step('Hết hàng', async () => {
+  await caption('Quay lại menu, tìm món “Trà vải”', 300);
   await page.goto(WEB);
   await page.getByTestId('product-card').first().waitFor();
   await page.getByPlaceholder('Tìm món…').pressSequentially('Trà vải', { delay: 80 });
   await caption('Món hết hàng hiển thị nhãn “Hết hàng”, không thể thêm vào giỏ', 3000);
+});
+
+await step('Trang quản lý', async () => {
+  await page.goto(`${WEB}/login`);
+  await page.waitForLoadState('networkidle');
+  const res = await page.request.post(`${API}/auth/login`, { data: { email: 'manager@brewlite.dev', password: 'Manager@123' } });
+  const { accessToken, user } = await res.json();
+  await page.evaluate(([t, u]) => { localStorage.setItem('brewlite.token', t); localStorage.setItem('brewlite.user', u); }, [accessToken, JSON.stringify(user)]);
+  await page.goto(`${WEB}/manage`);
+  await page.getByTestId('manage-product').first().waitFor();
+  await caption('Bước 10: Quản lý đăng nhập – trang Quản lý, tab Menu', 2800);
+  await page.getByRole('button', { name: 'Sửa' }).first().click();
+  await caption('Sửa tên, mô tả, giá, số lượng tồn; chạm vào ảnh để đổi ảnh; ẩn/hiện món', 3200);
+  await page.getByRole('button', { name: 'Hủy' }).first().click();
+  await page.getByRole('tab', { name: 'Nhân viên' }).click();
+  await page.getByTestId('manage-staff').first().waitFor();
+  await caption('Tab Nhân viên: cấp tài khoản, khóa / mở khóa, đặt lại mật khẩu', 3200);
+  await page.goto(`${WEB}/cart`);
+  await page.waitForURL(/\/manage/);
+  await caption('Quản lý mở trang giỏ hàng bị đưa về trang Quản lý – không được mua hàng', 3000);
   await caption('Hết demo. Cảm ơn thầy và các bạn đã theo dõi!', 2500);
 });
 

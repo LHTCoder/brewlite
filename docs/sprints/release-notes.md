@@ -15,6 +15,7 @@ Mỗi lần merge vào `main`, CD tự triển khai lên production, nên produc
 | #19 | 14/11/2026 | Sửa lỗi theo phản biện nội bộ: giới hạn PATCH trạng thái của nhân viên, khóa đơn khi hủy, chống deadlock, timeout 503, validate query; nâng Next.js 14.2.35; số đo NFR; đồng bộ tài liệu |
 | #20 | 15/11/2026 | Sửa ngày merge PR #19 trong release notes; chú thích mã FR ở trang chi tiết đơn khớp SRS (FR-10) |
 | #21 | 16/11/2026 | Yêu cầu bổ sung của khách hàng (SRS v1.1): mã QR thanh toán riêng từng đơn (FR-08), phân quyền 3 vai trò – quầy/quản lý không mua hàng (FR-19), trang Quản lý sửa menu và ảnh món (FR-16), cấp/khóa/đặt lại mật khẩu tài khoản nhân viên (FR-18), ảnh chụp thật cho 11 món |
+| #22 | 16/11/2026 | Quay lại video demo và chụp lại ảnh minh chứng theo luồng mã QR và trang Quản lý |
 
 ---
 
