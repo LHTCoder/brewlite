@@ -6,6 +6,7 @@ const API_URL = process.env.API_URL ?? 'http://localhost:4000';
  * E2E-T01: Luồng end-to-end Menu → Chi tiết → Giỏ → Đăng ký → Checkout → Thanh toán → Xác nhận
  * E2E-T02: Thanh toán thất bại (thẻ ...0002) rồi thử lại thành công bằng ví
  * E2E-T03: Trạng thái empty / hết hàng trên menu
+ * E2E-T05: Quầy và quản lý không vào được trang mua hàng; quản lý thấy trang Quản lý
  */
 test.describe('BrewLite – luồng đặt và thanh toán đơn hàng', () => {
   test('E2E-T01 đặt đơn và thanh toán ví thành công, thấy xác nhận và lịch sử', async ({ page }) => {
@@ -49,6 +50,14 @@ test.describe('BrewLite – luồng đặt và thanh toán đơn hàng', () => {
     await page.getByRole('button', { name: 'Áp dụng' }).click();
     await expect(page.getByText(/Đã áp dụng WELCOME10/)).toBeVisible();
     await page.getByText('Ví điện tử').click();
+    await expect(page.getByTestId('pay-button')).toHaveText('Đặt đơn & lấy mã QR');
+    await page.getByTestId('pay-button').click();
+
+    // 5b. Đơn được tạo, hiện mã QR riêng của đơn -> khách quét rồi xác nhận
+    const qr = page.getByTestId('payment-qr');
+    await expect(qr).toBeVisible({ timeout: 20_000 });
+    await expect(qr.getByRole('img', { name: /Mã QR thanh toán đơn BL-/ })).toBeVisible();
+    expect(await qr.getAttribute('data-qr-payload')).toMatch(/order=BL-[A-Z2-9]{5}&amount=\d+&ref=/);
     await page.getByTestId('pay-button').click();
 
     // 6. Xác nhận đơn
@@ -96,6 +105,9 @@ test.describe('BrewLite – luồng đặt và thanh toán đơn hàng', () => {
     await expect(page.getByTestId('pay-button')).toHaveText('Thử thanh toán lại');
 
     await page.getByText('Ví điện tử').click();
+    // Đơn PENDING đã có -> mã QR hiện ngay, cùng mã đơn với lần thanh toán thẻ thất bại
+    await expect(page.getByTestId('payment-qr')).toBeVisible();
+    await expect(page.getByTestId('pay-button')).toHaveText('Tôi đã quét mã & thanh toán');
     await page.getByTestId('pay-button').click();
     await expect(page.getByTestId('order-confirmation')).toBeVisible({ timeout: 20_000 });
   });
@@ -108,6 +120,33 @@ test.describe('BrewLite – luồng đặt và thanh toán đơn hàng', () => {
     expect(names.every((n) => /Bánh/.test(n))).toBe(true);
     await page.getByLabel('Tìm món').fill('không-tồn-tại-xyz');
     await expect(page.getByTestId('empty-state')).toBeVisible();
+  });
+
+  test('E2E-T05 quầy chỉ thấy màn hình quầy; quản lý có trang Quản lý; không ai trong hai vai trò mua được', async ({ page }) => {
+    const loginAs = async (email: string, password: string) => {
+      await page.goto('/login');
+      await page.getByLabel('Email').fill(email);
+      await page.getByLabel('Mật khẩu').fill(password);
+      await page.getByRole('button', { name: 'Đăng nhập' }).click();
+    };
+    const nav = page.getByRole('navigation', { name: 'Điều hướng chính' });
+
+    await loginAs('staff@brewlite.dev', 'Staff@123');
+    await expect(page).toHaveURL(/\/staff$/);
+    await expect(nav.getByRole('link')).toHaveText(['Quầy', 'Tài khoản']);
+    await page.goto('/cart');
+    await expect(page).toHaveURL(/\/staff$/);
+    await page.goto('/account');
+    await page.getByRole('button', { name: 'Đăng xuất' }).click();
+
+    await loginAs('manager@brewlite.dev', 'Manager@123');
+    await expect(page).toHaveURL(/\/manage$/);
+    await expect(nav.getByRole('link')).toHaveText(['Quản lý', 'Quầy', 'Tài khoản']);
+    await expect(page.getByTestId('manage-product').first()).toBeVisible();
+    await page.getByRole('tab', { name: 'Nhân viên' }).click();
+    await expect(page.getByTestId('manage-staff').first()).toBeVisible();
+    await page.goto('/checkout');
+    await expect(page).toHaveURL(/\/manage$/);
   });
 
   test('E2E-T04 API health và bảo vệ endpoint bằng JWT', async ({ request }) => {

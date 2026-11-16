@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api, ApiRequestError } from '@/lib/api';
+import { api, ApiRequestError, homeFor } from '@/lib/api';
 import { useAuth } from '@/store/auth';
 import { Spinner } from './States';
 
@@ -46,7 +46,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'register' }) {
               fullName: form.fullName,
             });
       login(res.accessToken, res.user);
-      router.replace(next);
+      // Quầy và quản lý không mua hàng: luôn về màn hình làm việc của vai trò (FR-19)
+      router.replace(res.user.role === 'CUSTOMER' ? next : homeFor(res.user.role));
     } catch (e) {
       setServerError(e instanceof ApiRequestError ? e.message : 'Có lỗi xảy ra');
     } finally {

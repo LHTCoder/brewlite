@@ -1,4 +1,5 @@
 'use client';
+import { imageSrc } from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/store/cart';
@@ -38,7 +39,7 @@ export default function CartPage() {
           <ul className="space-y-3 px-4 pt-3">
             {lines.map((l) => (
               <li key={l.key} data-testid="cart-line" className="card flex gap-3 p-3">
-                <img src={l.imageUrl ?? '/images/placeholder.svg'} alt="" className="h-20 w-20 rounded-xl bg-brew-50 object-cover" />
+                <img src={imageSrc(l.imageUrl)} alt="" className="h-20 w-20 rounded-xl bg-brew-50 object-cover" />
                 <div className="flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="font-semibold leading-tight">{l.productName}</h3>

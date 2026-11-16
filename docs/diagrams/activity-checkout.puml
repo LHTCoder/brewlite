@@ -71,7 +71,8 @@ if (Nhập mã khuyến mãi?) then (có)
   |Khách hàng|
 else (không)
 endif
-:Chọn phương thức Ví / Thẻ, nhấn "Đặt đơn & thanh toán";
+:Chọn phương thức Ví (QR) / Thẻ, nhấn "Đặt đơn & lấy mã QR"
+ hoặc "Đặt đơn & thanh toán";
 |Next.js UI|
 :Sinh idempotencyKey (UUID);
 :POST /orders {items, promotionCode, note} + Bearer JWT;
@@ -103,6 +104,14 @@ else (đủ)
 endif
 |Next.js UI|
 :Lưu pendingOrder;
+if (Phương thức Ví?) then (có – FR-08)
+  :Hiện mã QR riêng của đơn
+   (mã đơn + số tiền + id đơn);
+  |Khách hàng|
+  :Quét mã, nhấn "Tôi đã quét mã & thanh toán";
+  |Next.js UI|
+else (Thẻ)
+endif
 repeat
   :POST /payments {orderId, method, idempotencyKey, cardNumber?};
   |NestJS API + PostgreSQL|

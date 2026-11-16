@@ -9,6 +9,7 @@ import { useAuth } from '@/store/auth';
 import { Header } from '@/components/Header';
 import { Spinner } from '@/components/States';
 import { useToast } from '@/components/Toast';
+import { PaymentQr } from '@/components/PaymentQr';
 
 function newIdempotencyKey() {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -20,6 +21,7 @@ function newIdempotencyKey() {
  * UC-10 Đặt và thanh toán đơn hàng:
  *  1. Kiểm tra mã KM (tùy chọn) -> 2. POST /orders -> 3. POST /payments (idempotent)
  *  -> 4. điều hướng tới trang xác nhận. Thất bại thanh toán: giữ đơn PENDING, cho thử lại.
+ *  Ví điện tử (FR-08): tạo đơn trước, hiện mã QR riêng của đơn, khách quét xong bấm xác nhận mới gọi thanh toán.
  */
 export default function CheckoutPage() {
   const router = useRouter();
@@ -32,7 +34,6 @@ export default function CheckoutPage() {
   const [promoError, setPromoError] = useState<string | null>(null);
   const [method, setMethod] = useState<PaymentMethod>('WALLET');
   const [cardNumber, setCardNumber] = useState('');
-  const [walletPhone, setWalletPhone] = useState('');
   const [step, setStep] = useState<'idle' | 'ordering' | 'paying'>('idle');
   const [pendingOrder, setPendingOrder] = useState<Order | null>(null);
   const [payError, setPayError] = useState<string | null>(null);
@@ -102,6 +103,12 @@ export default function CheckoutPage() {
           note: note || undefined,
         });
         setPendingOrder(order);
+        if (method === 'WALLET') {
+          // Dừng lại để khách quét mã QR của đơn vừa tạo
+          setStep('idle');
+          toast.show(`Đã tạo đơn ${order.code} – quét mã QR để thanh toán`, 'info');
+          return;
+        }
       }
       setStep('paying');
       const payment = await api.payments.pay({
@@ -109,7 +116,6 @@ export default function CheckoutPage() {
         method,
         idempotencyKey: idemKey,
         cardNumber: method === 'CARD' ? cardNumber : undefined,
-        walletPhone: method === 'WALLET' ? walletPhone || undefined : undefined,
       });
       if (payment.status === 'SUCCEEDED') {
         clear();
@@ -194,7 +200,7 @@ export default function CheckoutPage() {
                 }`}
               >
                 <input type="radio" name="method" value={m} checked={method === m} onChange={() => setMethod(m)} className="sr-only" />
-                {m === 'WALLET' ? '👛 Ví điện tử' : '💳 Thẻ ngân hàng'}
+                {m === 'WALLET' ? '📱 Ví điện tử (QR)' : '💳 Thẻ ngân hàng'}
               </label>
             ))}
           </div>
@@ -215,14 +221,12 @@ export default function CheckoutPage() {
               />
               <p className="mt-1 text-xs text-brew-400">Mô phỏng: thẻ kết thúc bằng 0002 sẽ bị từ chối.</p>
             </div>
+          ) : pendingOrder ? (
+            <PaymentQr order={pendingOrder} />
           ) : (
-            <div className="mt-3">
-              <label htmlFor="wallet" className="block text-sm font-medium">
-                Số điện thoại ví (tùy chọn)
-              </label>
-              <input id="wallet" inputMode="tel" value={walletPhone} onChange={(e) => setWalletPhone(e.target.value)} placeholder="0901234567" className="input mt-1" />
-              <p className="mt-1 text-xs text-brew-400">Mô phỏng: ví có hạn mức 500.000đ / giao dịch.</p>
-            </div>
+            <p className="mt-3 text-xs text-brew-400">
+              Bấm đặt đơn để nhận mã QR riêng cho đơn này. Mô phỏng: hạn mức 500.000đ / giao dịch.
+            </p>
           )}
         </section>
 
@@ -249,7 +253,13 @@ export default function CheckoutPage() {
           </div>
         </dl>
         <button type="button" onClick={submit} disabled={!canSubmit} className="btn-primary w-full" data-testid="pay-button">
-          {step === 'ordering' ? <Spinner label="Đang tạo đơn…" /> : step === 'paying' ? <Spinner label="Đang thanh toán…" /> : pendingOrder ? 'Thử thanh toán lại' : 'Đặt đơn & thanh toán'}
+          {step === 'ordering' ? <Spinner label="Đang tạo đơn…" /> : step === 'paying' ? <Spinner label="Đang thanh toán…" /> : pendingOrder
+              ? method === 'WALLET'
+                ? 'Tôi đã quét mã & thanh toán'
+                : 'Thử thanh toán lại'
+              : method === 'WALLET'
+                ? 'Đặt đơn & lấy mã QR'
+                : 'Đặt đơn & thanh toán'}
         </button>
       </div>
     </>

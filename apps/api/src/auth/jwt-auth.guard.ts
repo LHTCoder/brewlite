@@ -9,6 +9,9 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../users/user.entity';
 import { Request } from 'express';
 import { JwtPayload } from './auth.service';
 import { UserRole } from '../common/enums';
@@ -24,16 +27,18 @@ export const CurrentUser = createParamDecorator((_data: unknown, ctx: ExecutionC
 });
 
 /**
- * NFR-02 Bảo mật: kiểm tra Bearer JWT, sau đó kiểm tra vai trò (nếu có @Roles).
+ * NFR-02 Bảo mật: kiểm tra Bearer JWT, đọc lại tài khoản trong DB (bị khóa -> 401,
+ * vai trò lấy theo DB để thay đổi có hiệu lực ngay), sau đó kiểm tra vai trò (nếu có @Roles).
  */
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    @InjectRepository(User) private readonly users: Repository<User>,
   ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request & { user?: JwtPayload }>();
     const header = req.headers.authorization;
     if (!header || !header.startsWith('Bearer ')) {
@@ -44,6 +49,13 @@ export class JwtAuthGuard implements CanActivate {
     } catch {
       throw new UnauthorizedException('Token không hợp lệ hoặc đã hết hạn');
     }
+    const account = await this.users.findOne({
+      where: { id: req.user.sub },
+      select: { id: true, role: true, isActive: true },
+    });
+    if (!account) throw new UnauthorizedException('Tài khoản không tồn tại');
+    if (!account.isActive) throw new UnauthorizedException('Tài khoản đã bị khóa');
+    req.user = { ...req.user, role: account.role };
 
     const roles = this.reflector.getAllAndOverride<UserRole[] | undefined>(ROLES_KEY, [
       context.getHandler(),

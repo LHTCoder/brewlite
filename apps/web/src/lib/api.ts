@@ -1,4 +1,4 @@
-import type { ApiError, AuthResult, Order, PaymentMethod, Payment, Product, User } from './types';
+import type { ApiError, AuthResult, Order, PaymentMethod, Payment, Product, ProductCategory, User, UserRole } from './types';
 
 export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').replace(/\/$/, '');
 
@@ -13,6 +13,19 @@ export class ApiRequestError extends Error {
     if (!body) return status === 0 ? 'Không kết nối được máy chủ' : `Lỗi ${status}`;
     return Array.isArray(body.message) ? body.message.join('. ') : body.message;
   }
+}
+
+/** Ảnh món: ảnh tĩnh của web (/images/...) hoặc ảnh quản lý tải lên, phục vụ từ API (/media/...) */
+export function imageSrc(url: string | null | undefined): string {
+  if (!url) return '/images/placeholder.svg';
+  return url.startsWith('/media/') ? `${API_URL}${url}` : url;
+}
+
+/** Trang chủ theo vai trò: khách -> menu, quầy -> màn hình quầy, quản lý -> trang quản lý */
+export function homeFor(role: UserRole | undefined | null): string {
+  if (role === 'STAFF') return '/staff';
+  if (role === 'MANAGER') return '/manage';
+  return '/';
 }
 
 function getToken(): string | null {
@@ -98,6 +111,24 @@ export const api = {
         body: JSON.stringify(payload),
         headers: { 'Idempotency-Key': payload.idempotencyKey },
       }),
+  },
+  admin: {
+    products: () => request<Product[]>('/admin/products'),
+    createProduct: (data: { name: string; description?: string; category: ProductCategory; basePrice: number; stock: number }) =>
+      request<Product>('/admin/products', { method: 'POST', body: JSON.stringify(data) }),
+    updateProduct: (
+      id: string,
+      data: Partial<{ name: string; description: string; category: ProductCategory; basePrice: number; stock: number; isAvailable: boolean }>,
+    ) => request<Product>(`/admin/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    uploadImage: (id: string, dataUrl: string) =>
+      request<Product>(`/admin/products/${id}/image`, { method: 'PUT', body: JSON.stringify({ dataUrl }) }),
+    users: () => request<User[]>('/admin/users'),
+    createUser: (data: { email: string; fullName: string; password: string; role: UserRole }) =>
+      request<User>('/admin/users', { method: 'POST', body: JSON.stringify(data) }),
+    setActive: (id: string, isActive: boolean) =>
+      request<User>(`/admin/users/${id}/status`, { method: 'PATCH', body: JSON.stringify({ isActive }) }),
+    resetPassword: (id: string, password: string) =>
+      request<{ ok: true }>(`/admin/users/${id}/reset-password`, { method: 'POST', body: JSON.stringify({ password }) }),
   },
   health: () => request<{ status: string; version: string }>('/health'),
 };

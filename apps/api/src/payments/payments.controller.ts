@@ -12,7 +12,8 @@ import {
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { CurrentUser, JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser, JwtAuthGuard, Roles } from '../auth/jwt-auth.guard';
+import { UserRole } from '../common/enums';
 import { JwtPayload } from '../auth/auth.service';
 
 @ApiTags('payments')
@@ -23,6 +24,7 @@ export class PaymentsController {
   constructor(private readonly service: PaymentsService) {}
 
   @Post()
+  @Roles(UserRole.CUSTOMER)
   @ApiOperation({ summary: 'FR-08 Thanh toán Ví/Thẻ mô phỏng, FR-09 idempotent' })
   @ApiHeader({
     name: 'Idempotency-Key',

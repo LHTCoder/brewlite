@@ -47,13 +47,14 @@ src/
 ├── config/configuration.ts # đọc & kiểm tra biến môi trường
 ├── common/                 # enums, máy trạng thái, filter lỗi, middleware log
 ├── database/               # data-source, migrations/, seed, migrate (chạy trong container)
-├── auth/                   # register/login, JwtAuthGuard, @Roles, @CurrentUser
+├── auth/                   # register/login, JwtAuthGuard (đọc vai trò + isActive từ DB), @Roles, @CurrentUser
 ├── users/                  # entity User
-├── products/               # Product, ProductSize, Topping – GET /products, /products/:id
+├── products/               # Product, ProductSize, Topping, ProductImage – GET /products, /products/:id
 ├── orders/                 # Order, OrderItem, pricing (pure), OrdersService (transaction)
 ├── payments/               # Payment, PaymentsService (idempotent), PaymentGatewayService (mock)
 ├── promotions/             # Promotion – GET /promotions/:code
 ├── loyalty/                # LoyaltyTransaction – GET /loyalty/transactions
+├── admin/                  # chỉ MANAGER: /admin/products (sửa menu, ảnh), /admin/users (tài khoản nhân viên); GET /media/products/:id
 └── health/                 # GET /health
 ```
 

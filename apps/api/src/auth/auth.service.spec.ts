@@ -1,4 +1,4 @@
-import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -77,5 +77,18 @@ describe('AuthService', () => {
     await expect(service.login({ email: 'x@b.com', password: 'wrong' })).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('API-T04 login bị từ chối khi tài khoản đã bị quản lý khóa (FR-18)', async () => {
+    qb.getOne.mockResolvedValue({
+      id: 's2',
+      email: 'quay2@brewlite.dev',
+      role: 'STAFF',
+      isActive: false,
+      passwordHash: await bcrypt.hash('Staff@1234', 4),
+    });
+    await expect(
+      service.login({ email: 'quay2@brewlite.dev', password: 'Staff@1234' }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

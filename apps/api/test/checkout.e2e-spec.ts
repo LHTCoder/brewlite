@@ -291,7 +291,8 @@ describe('Checkout flow (integration)', () => {
       .set(auth(token))
       .send({ orderId: id, method: 'WALLET', idempotencyKey: randomUUID() })
       .expect(201);
-    await http().post(`/orders/${id}/cancel`).set(auth(staffToken)).expect(400);
+    await http().post(`/orders/${id}/cancel`).set(auth(token)).expect(400); // đơn PAID không hủy được
+    await http().post(`/orders/${id}/cancel`).set(auth(staffToken)).expect(403); // quầy không hủy đơn
   });
 
   it('INT-T14 hủy và thanh toán cùng lúc: không có đơn CANCELLED mà tiền đã trừ', async () => {

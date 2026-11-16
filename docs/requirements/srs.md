@@ -2,7 +2,7 @@
 
 | Thuộc tính | Giá trị |
 |---|---|
-| Phiên bản | 1.0 |
+| Phiên bản | 1.1 (16/11/2026: bổ sung yêu cầu của khách hàng – mã QR thanh toán, phân quyền 3 vai trò, trang Quản lý) |
 | Chuẩn tham chiếu | IEEE 830 (rút gọn), MoSCoW |
 | Liên quan | [Bối cảnh & phạm vi](./context-and-scope.md) · [UC-10 Đặt & thanh toán](./use-case-checkout.md) · [Ma trận truy vết](../traceability-matrix.md) |
 
@@ -27,6 +27,19 @@ Khách hàng (PWA) ──HTTPS──▶ Next.js Web ──HTTPS/JSON──▶ Ne
 | Đơn hàng (Order) | Tập hợp các dòng OrderItem của một khách, có trạng thái |
 | Idempotency key | Khóa duy nhất do client sinh để cùng một yêu cầu thanh toán gửi lại không bị xử lý 2 lần |
 | MVP | Phiên bản nhỏ nhất chạy được với tính năng cốt lõi |
+| Mã QR thanh toán | Mã QR minh họa sinh riêng cho mỗi đơn (mã đơn + số tiền + id đơn) để khách quét khi chọn Ví; là mô phỏng, không chuyển tiền thật |
+
+### 1.4 Thay đổi yêu cầu ở phiên bản 1.1
+
+Ngày 16/11/2026 khách hàng (giảng viên đóng vai chủ quán) bổ sung 5 yêu cầu; nhóm xử lý như một thay đổi yêu cầu có kiểm soát (cập nhật SRS → thiết kế → code → test → triển khai, PR #21):
+
+| # | Yêu cầu của khách hàng | Ghi vào |
+|---|---|---|
+| 1 | Khi thanh toán hiện mã QR minh họa để khách quét, mỗi đơn một mã khác nhau | FR-08 (AC-08.6, AC-08.7) |
+| 2 | Tài khoản quầy và tài khoản quản lý không được mua hàng | FR-19 |
+| 3 | Tài khoản quầy chỉ nhận đơn và duyệt trạng thái đơn | FR-13, FR-19 |
+| 4 | Quản lý được thay đổi menu (số lượng, hình ảnh, giá…), quản lý nhân viên, cấp tài khoản | FR-16 (nâng từ Could lên Should, đã hiện thực), FR-18 (mới) |
+| 5 | Ảnh menu chân thật | FR-01 (ảnh chụp sản phẩm thay ảnh minh họa SVG) |
 
 ## 2. Sơ đồ use-case tổng quát
 
@@ -38,8 +51,8 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 |---|---|
 | Khách hàng (chưa đăng nhập) | UC-1 Xem thực đơn và tìm kiếm món, UC-2 Đăng ký tài khoản, UC-3 Xem chi tiết món và chọn Size/Topping, UC-4 Quản lý giỏ hàng, UC-5 Đăng nhập |
 | Khách hàng (đã đăng nhập) | Kế thừa UC-1…UC-5; UC-6 Xem lịch sử đơn hàng, UC-7 Theo dõi trạng thái đơn hàng, UC-8 Hủy đơn chờ thanh toán, UC-9 Tra cứu điểm thành viên, UC-10 Đặt và thanh toán đơn hàng |
-| Nhân viên quầy | UC-11 Xem danh sách đơn cần pha chế, UC-12 Cập nhật trạng thái đơn hàng |
-| Quản lý | UC-11, UC-12 (kế thừa nhân viên), UC-13 Quản trị thực đơn và khuyến mãi (Could – qua seed/SQL trong MVP) |
+| Nhân viên quầy | UC-11 Xem danh sách đơn cần pha chế, UC-12 Cập nhật trạng thái đơn hàng (không có use-case mua hàng – FR-19) |
+| Quản lý | UC-11, UC-12 (kế thừa nhân viên), UC-13 Quản trị thực đơn (giá, số lượng tồn, ảnh, ẩn/hiện, thêm món), UC-14 Quản lý tài khoản nhân viên (cấp, khóa/mở khóa, đặt lại mật khẩu) |
 | Payment Service (hệ thống ngoài) | Tham gia UC-10 (xử lý giao dịch) |
 
 ## 3. Yêu cầu chức năng (FR)
@@ -50,7 +63,7 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
-| **FR-01** | Hệ thống hiển thị danh sách sản phẩm đang bán (tên, ảnh, giá cơ bản, danh mục), cho phép lọc theo danh mục và tìm theo tên. | Must | AC-01.1 `GET /products` trả 200 và mảng sản phẩm có `isAvailable=true`, mỗi phần tử gồm `id, name, basePrice, category, imageUrl, stock, sizes, toppings`. AC-01.2 `GET /products?category=COFFEE` chỉ trả sản phẩm danh mục COFFEE. AC-01.3 Màn hình menu hiển thị skeleton khi tải, thông báo "Menu đang trống" khi mảng rỗng, và thông báo lỗi + nút "Thử lại" khi API lỗi. AC-01.4 Thời gian hiển thị menu ≤ 2s trên 4G (NFR-01). |
+| **FR-01** | Hệ thống hiển thị danh sách sản phẩm đang bán (tên, ảnh chụp sản phẩm, giá cơ bản, danh mục), cho phép lọc theo danh mục và tìm theo tên. | Must | AC-01.1 `GET /products` trả 200 và mảng sản phẩm có `isAvailable=true`, mỗi phần tử gồm `id, name, basePrice, category, imageUrl, stock, sizes, toppings`. AC-01.2 `GET /products?category=COFFEE` chỉ trả sản phẩm danh mục COFFEE. AC-01.3 Màn hình menu hiển thị skeleton khi tải, thông báo "Menu đang trống" khi mảng rỗng, và thông báo lỗi + nút "Thử lại" khi API lỗi. AC-01.4 Thời gian hiển thị menu ≤ 2s trên 4G (NFR-01). |
 | **FR-02** | Hệ thống hiển thị chi tiết một sản phẩm: mô tả, giá, các size với phụ thu, các topping với giá, số lượng còn, và cho chọn số lượng. | Must | AC-02.1 `GET /products/:id` trả 200 với `sizes[]` sắp theo phụ thu tăng dần và `toppings[]`. AC-02.2 `id` không tồn tại → 404; `id` sai định dạng UUID → 400. AC-02.3 Sản phẩm có `stock = 0` hiển thị "Hết hàng", nút thêm giỏ bị vô hiệu. AC-02.4 Giá hiển thị trên nút = (giá cơ bản + phụ thu size + Σ topping) × số lượng. |
 
 ### 3.2 Giỏ hàng
@@ -77,7 +90,7 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
-| **FR-08** | Khách thanh toán đơn PENDING bằng Ví hoặc Thẻ (dịch vụ mô phỏng). Thành công → đơn chuyển PAID, cộng điểm thưởng. Thất bại → lưu giao dịch FAILED, đơn giữ PENDING để thử lại. | Must | AC-08.1 `POST /payments` {method:WALLET} với tổng ≤ 500.000đ → 201, `status=SUCCEEDED`, `providerRef` có giá trị; `GET /orders/:id` → `status=PAID`. AC-08.2 Thẻ kết thúc `0002` → `status=FAILED`, `failureReason="Ngân hàng từ chối giao dịch"`, đơn vẫn PENDING. AC-08.3 Thanh toán đơn đã PAID/CANCELLED → 400. AC-08.4 Khách A không thể thanh toán đơn của khách B → 403. AC-08.5 Số thẻ không được lưu trong DB (chỉ lưu `providerRef`). |
+| **FR-08** | Khách thanh toán đơn PENDING bằng Ví hoặc Thẻ (dịch vụ mô phỏng). Với Ví, hệ thống tạo đơn trước rồi hiện **mã QR minh họa riêng của đơn** để khách quét, khách bấm "Tôi đã quét mã & thanh toán" thì mới gửi yêu cầu thanh toán. Thành công → đơn chuyển PAID, cộng điểm thưởng. Thất bại → lưu giao dịch FAILED, đơn giữ PENDING để thử lại. | Must | AC-08.1 `POST /payments` {method:WALLET} với tổng ≤ 500.000đ → 201, `status=SUCCEEDED`, `providerRef` có giá trị; `GET /orders/:id` → `status=PAID`. AC-08.2 Thẻ kết thúc `0002` → `status=FAILED`, `failureReason="Ngân hàng từ chối giao dịch"`, đơn vẫn PENDING. AC-08.3 Thanh toán đơn đã PAID/CANCELLED → 400. AC-08.4 Khách A không thể thanh toán đơn của khách B → 403. AC-08.5 Số thẻ không được lưu trong DB (chỉ lưu `providerRef`). AC-08.6 Chọn Ví và bấm "Đặt đơn & lấy mã QR" → đơn PENDING được tạo, màn hình hiện mã QR, mã đơn và số tiền; chưa có giao dịch nào cho tới khi khách bấm xác nhận. AC-08.7 Nội dung QR gồm mã đơn, số tiền và id đơn (`brewlite://pay?order=BL-XXXXX&amount=…&ref=…`) nên hai đơn khác nhau luôn có hai mã QR khác nhau. |
 | **FR-09** | Yêu cầu thanh toán phải idempotent: client gửi `idempotencyKey`; gửi lại cùng key → trả kết quả giao dịch cũ, không tạo giao dịch mới. | Must | AC-09.1 Gửi `POST /payments` 2 lần cùng `idempotencyKey` → cả 2 trả cùng `payment.id`; bảng `payments` chỉ có 1 bản ghi cho đơn đó. AC-09.2 Cùng key nhưng khác `orderId` → 409. AC-09.3 Sau thất bại, frontend sinh key mới cho lần thử lại. |
 
 ### 3.6 Theo dõi & lịch sử đơn
@@ -101,12 +114,14 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 | **FR-14** | Mỗi 10.000đ thanh toán thành công tích 1 điểm; ghi `LoyaltyTransaction` EARN và cộng vào `user.loyaltyPoints`; khách xem điểm và lịch sử tích điểm. | Should | AC-14.1 Thanh toán thành công đơn 99.000đ → +9 điểm, 100.000đ → +10 điểm; `GET /auth/me` phản ánh điểm mới. AC-14.2 `GET /loyalty/transactions` có bản ghi `type=EARN` gắn với `order`. AC-14.3 Thanh toán thất bại không tạo giao dịch điểm. |
 | **FR-15** | Đổi điểm lấy giảm giá (REDEEM). | Could | AC-15.1 Khách có ≥ 100 điểm chọn đổi 100 điểm khi đặt đơn → đơn được giảm 10.000đ, `user.loyaltyPoints` giảm 100, có `LoyaltyTransaction` `type=REDEEM`. AC-15.2 Không đủ điểm → 400, không trừ điểm. *(Chưa hiện thực trong MVP; mô hình dữ liệu đã có `LoyaltyTransactionType.REDEEM`.)* |
 
-### 3.9 Quản trị menu
+### 3.9 Quản trị menu và tài khoản (vai trò Quản lý)
 
 | Mã | Yêu cầu | MoSCoW | Tiêu chí chấp nhận |
 |---|---|---|---|
-| **FR-16** | Quản lý thêm/sửa sản phẩm, giá, tồn kho, khuyến mãi qua giao diện. | Could | AC-16.1 MANAGER sửa giá/tồn kho một món → `GET /products/:id` trả giá trị mới; CUSTOMER/STAFF gọi API quản trị → 403. *(Chưa hiện thực; MVP quản lý menu qua seed/migration.)* |
+| **FR-16** | Quản lý xem toàn bộ món (kể cả món đang ẩn), sửa tên, mô tả, giá, số lượng tồn, ẩn/hiện món, đổi ảnh món và thêm món mới tại trang `/manage`. *(v1.1: nâng từ Could lên Should theo yêu cầu khách hàng; khuyến mãi vẫn quản lý qua seed.)* | Should | AC-16.1 MANAGER `PATCH /admin/products/:id` sửa giá/tồn kho → 200 và `GET /products` trả giá trị mới; CUSTOMER/STAFF gọi API `/admin/*` → 403. AC-16.2 Món bị ẩn (`isAvailable=false`) không còn trong `GET /products`; mở bán lại thì xuất hiện trở lại. AC-16.3 `PUT /admin/products/:id/image` nhận ảnh JPEG/PNG/WebP (≤ 1,5 MB, web tự thu nhỏ về 800×800) → `imageUrl` đổi sang `/media/products/:id?v=…`, ảnh xem được công khai; tệp không phải ảnh → 400. AC-16.4 `POST /admin/products` thêm món: đồ uống tự có size S/M/L và topping, bánh không có size. |
 | **FR-17** | Thông báo đẩy khi đơn READY. | Won't (MVP) | Không làm trong MVP nên không đặt tiêu chí chấp nhận. |
+| **FR-18** | Quản lý cấp tài khoản cho nhân viên quầy hoặc quản lý khác, khóa / mở khóa và đặt lại mật khẩu các tài khoản này. *(Mới ở v1.1.)* | Should | AC-18.1 `POST /admin/users` với `role` STAFF/MANAGER → 201, không trả mật khẩu/hash; email trùng → 409; `role=CUSTOMER` → 400. AC-18.2 Tài khoản bị khóa: đăng nhập → 403 "Tài khoản đã bị khóa…", token cũ gọi API → 401. AC-18.3 Đặt lại mật khẩu → mật khẩu cũ không đăng nhập được, mật khẩu mới được. AC-18.4 Quản lý không tự khóa chính mình (400) và không thao tác được trên tài khoản khách (404). |
+| **FR-19** | Phân quyền theo 3 vai trò: chỉ **khách hàng** được đặt đơn, thanh toán, hủy đơn, xem lịch sử mua; **nhân viên quầy** chỉ nhận đơn và cập nhật trạng thái; **quản lý** quản trị menu, tài khoản và xem được màn hình quầy. *(Mới ở v1.1.)* | Must | AC-19.1 Token STAFF/MANAGER gọi `POST /orders`, `GET /orders/me`, `POST /payments`, `POST /orders/:id/cancel` → 403. AC-19.2 Thanh điều hướng: khách có Menu/Giỏ hàng/Đơn hàng/Tài khoản; quầy chỉ có Quầy/Tài khoản; quản lý có Quản lý/Quầy/Tài khoản. AC-19.3 Quầy/quản lý đăng nhập được đưa thẳng tới `/staff` hoặc `/manage`; mở các trang mua hàng (`/`, `/products/*`, `/cart`, `/checkout`, `/orders`) bị chuyển về màn hình làm việc. AC-19.4 Vai trò và trạng thái khóa được đọc lại từ DB ở mỗi request (guard), thay đổi có hiệu lực ngay không cần chờ token hết hạn. |
 
 ## 4. Yêu cầu phi chức năng (NFR)
 
@@ -132,7 +147,7 @@ Nguồn: [`docs/diagrams/use-case-overview.puml`](../diagrams/use-case-overview.
 
 | Mức | Yêu cầu |
 |---|---|
-| Must | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-08, FR-09, FR-10, FR-11, FR-13; NFR-01…NFR-05 |
-| Should | FR-07, FR-12, FR-14; NFR-06, NFR-07, NFR-08 |
-| Could | FR-15, FR-16; NFR-09 |
+| Must | FR-01, FR-02, FR-03, FR-04, FR-05, FR-06, FR-08, FR-09, FR-10, FR-11, FR-13, FR-19; NFR-01…NFR-05 |
+| Should | FR-07, FR-12, FR-14, FR-16, FR-18; NFR-06, NFR-07, NFR-08 |
+| Could | FR-15; NFR-09 |
 | Won't (MVP) | FR-17, cổng thanh toán thật, giao hàng, native app |

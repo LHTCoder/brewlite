@@ -49,6 +49,8 @@ export interface User {
   fullName: string;
   role: UserRole;
   loyaltyPoints: number;
+  isActive?: boolean;
+  createdAt?: string;
 }
 
 export interface AuthResult {
