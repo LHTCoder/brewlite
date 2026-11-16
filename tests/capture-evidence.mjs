@@ -85,8 +85,10 @@ await step('05 thanh toán – mã KM + thẻ bị từ chối', async () => {
   await shot('05b-the-bi-tu-choi.png');
 });
 
-await step('06 thanh toán ví thành công – xác nhận', async () => {
+await step('06 thanh toán ví qua mã QR – xác nhận', async () => {
   await page.getByText('Ví điện tử').click();
+  await page.getByTestId('payment-qr').waitFor();
+  await shot('05c-ma-qr.png');
   await page.getByTestId('pay-button').click();
   await page.getByTestId('order-confirmation').waitFor({ timeout: 20000 });
   await page.waitForTimeout(500);
@@ -123,6 +125,34 @@ await step('08 màn hình quầy (staff)', async () => {
   await page.waitForTimeout(1500);
   if (!page.url().includes('/staff')) throw new Error('bị chuyển hướng khỏi /staff');
   await shot('08-man-hinh-quay.png');
+});
+
+await step('12 trang quản lý (manager)', async () => {
+  await page.goto(`${WEB}/login`);
+  await page.waitForLoadState('networkidle');
+  const res = await page.request.post(`${API}/auth/login`, {
+    data: { email: 'manager@brewlite.dev', password: 'Manager@123' },
+  });
+  const { accessToken, user } = await res.json();
+  await page.evaluate(
+    ([t, u]) => {
+      localStorage.setItem('brewlite.token', t);
+      localStorage.setItem('brewlite.user', u);
+    },
+    [accessToken, JSON.stringify(user)],
+  );
+  await page.goto(`${WEB}/manage`);
+  await page.getByTestId('manage-product').first().waitFor();
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: join(OUT, '12a-quan-ly-menu.png') });
+  await page.getByRole('button', { name: 'Sửa' }).first().click();
+  await page.waitForTimeout(500);
+  await page.screenshot({ path: join(OUT, '12b-quan-ly-sua-mon.png') });
+  await page.getByRole('button', { name: 'Hủy' }).first().click();
+  await page.getByRole('tab', { name: 'Nhân viên' }).click();
+  await page.getByTestId('manage-staff').first().waitFor();
+  await page.waitForTimeout(800);
+  await page.screenshot({ path: join(OUT, '12c-quan-ly-nhan-vien.png'), fullPage: true });
 });
 
 await mobile.close();

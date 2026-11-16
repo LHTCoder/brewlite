@@ -34,8 +34,14 @@ rectangle "Hệ thống đặt đồ uống BrewLite" {
   usecase "UC-10: Đặt và thanh toán đơn hàng" as UC10 #F3E9DC
   usecase "UC-11: Xem danh sách đơn cần pha chế" as UC11
   usecase "UC-12: Cập nhật trạng thái đơn hàng" as UC12
-  usecase "UC-13: Quản trị thực đơn và khuyến mãi" as UC13
+  usecase "UC-13: Quản trị thực đơn\n(giá, tồn kho, ảnh, ẩn/hiện, thêm món)" as UC13
+  usecase "UC-14: Quản lý tài khoản nhân viên\n(cấp, khóa/mở khóa, đặt lại mật khẩu)" as UC14
 }
+
+note bottom of Staff
+  Quầy và quản lý không có
+  use-case mua hàng (FR-19)
+end note
 
 UC1 -[hidden]down- UC2
 UC2 -[hidden]down- UC3
@@ -48,6 +54,7 @@ UC8 -[hidden]down- UC9
 UC9 -[hidden]down- UC10
 UC11 -[hidden]down- UC12
 UC12 -[hidden]down- UC13
+UC13 -[hidden]down- UC14
 
 Guest -right- UC1
 Guest -right- UC2
@@ -66,6 +73,7 @@ Customer -[hidden]down- Pay
 UC11 -right- Staff
 UC12 -right- Staff
 UC13 -right- Manager
+UC14 -right- Manager
 
 Guest <|-down- Customer
 Staff <|-down- Manager

@@ -123,7 +123,10 @@ await step('Thẻ bị từ chối', async () => {
 let code = '';
 await step('Ví thành công', async () => {
   await page.getByText('Ví điện tử').click();
-  await caption('Bước 7: Đổi sang Ví điện tử và thanh toán lại');
+  await page.getByTestId('payment-qr').waitFor();
+  await page.getByTestId('payment-qr').scrollIntoViewIfNeeded();
+  await caption('Bước 7: Đổi sang Ví – màn hình hiện mã QR riêng của đơn này để khách quét', 3500);
+  await caption('Khách quét mã xong bấm “Tôi đã quét mã & thanh toán”');
   await page.getByTestId('pay-button').click();
   await page.getByTestId('order-confirmation').waitFor();
   code = (await page.getByTestId('order-confirmation').innerText()).match(/BL-[A-Z0-9]+/)?.[0] ?? '';

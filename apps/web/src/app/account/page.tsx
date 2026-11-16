@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api } from '@/lib/api';
+import { api, homeFor } from '@/lib/api';
+import type { UserRole } from '@/lib/types';
 import { useAuth } from '@/store/auth';
 import { Header } from '@/components/Header';
 import { EmptyState } from '@/components/States';
+
+const ROLE_LABEL: Record<UserRole, string> = { CUSTOMER: 'Khách hàng', STAFF: 'Nhân viên quầy', MANAGER: 'Quản lý' };
 
 export default function AccountPage() {
   const { user, hydrated, logout, setUser } = useAuth();
@@ -47,9 +50,12 @@ export default function AccountPage() {
           <div>
             <h2 className="font-bold">{user.fullName}</h2>
             <p className="text-sm text-brew-700">{user.email}</p>
-            <p className="text-xs text-brew-400">Vai trò: {user.role}</p>
+            <p className="text-xs text-brew-400" data-testid="account-role">
+              Vai trò: {ROLE_LABEL[user.role]}
+            </p>
           </div>
         </section>
+        {user.role === 'CUSTOMER' && (
         <section className="card flex items-center justify-between">
           <div>
             <h3 className="font-semibold">Điểm thưởng</h3>
@@ -59,6 +65,15 @@ export default function AccountPage() {
             {user.loyaltyPoints}
           </span>
         </section>
+        )}
+        {user.role !== 'CUSTOMER' && (
+          <p className="card text-sm text-brew-600">
+            Tài khoản {ROLE_LABEL[user.role].toLowerCase()} không dùng để mua hàng.{' '}
+            <Link href={homeFor(user.role)} className="font-semibold text-brew-700 underline">
+              Về màn hình làm việc
+            </Link>
+          </p>
+        )}
         <button
           type="button"
           onClick={() => {

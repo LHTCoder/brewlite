@@ -3,7 +3,13 @@
 [![CI](https://github.com/LHTCoder/brewlite/actions/workflows/ci.yml/badge.svg)](https://github.com/LHTCoder/brewlite/actions/workflows/ci.yml)
 [![CD](https://github.com/LHTCoder/brewlite/actions/workflows/cd.yml/badge.svg)](https://github.com/LHTCoder/brewlite/actions/workflows/cd.yml)
 
-Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đặt đơn → Thanh toán → Theo dõi đơn**
+Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đặt đơn → Thanh toán (Ví qua mã QR riêng từng đơn / Thẻ) → Theo dõi đơn**
+
+| Vai trò | Được làm gì |
+|---|---|
+| Khách hàng | Xem menu, giỏ hàng, đặt đơn, thanh toán, theo dõi và hủy đơn chờ thanh toán, tích điểm |
+| Nhân viên quầy | Chỉ nhận đơn và cập nhật trạng thái đơn tại màn hình **Quầy** (không mua hàng) |
+| Quản lý | Trang **Quản lý**: sửa menu (giá, số lượng tồn, ảnh, ẩn/hiện, thêm món), cấp tài khoản nhân viên, khóa/mở khóa, đặt lại mật khẩu; xem được màn hình Quầy (không mua hàng) |
 
 | Thành phần | Công nghệ | Thư mục |
 |---|---|---|
@@ -26,7 +32,8 @@ Luồng nghiệp vụ: **Xem menu → Chọn tùy chọn → Giỏ hàng → Đ�
 Tài khoản demo: `customer@brewlite.dev / Customer@123` · nhân viên `staff@brewlite.dev / Staff@123` · quản lý `manager@brewlite.dev / Manager@123`.
 > Đây là tài khoản mẫu do seed tạo để giảng viên chấm thử trên môi trường demo. Khi vận hành thật: tắt seed và Swagger, mật khẩu nhân viên được cấp riêng.
 Mã khuyến mãi: `WELCOME10` (−10 %, tối đa 20k, đơn ≥ 50k), `FREESHIP15K` (−15k, đơn ≥ 100k).
-Thanh toán mô phỏng: thẻ bất kỳ 16 số thành công, **thẻ kết thúc `0002` bị từ chối**; ví hạn mức 500.000đ.
+Thanh toán mô phỏng: thẻ bất kỳ 16 số thành công, **thẻ kết thúc `0002` bị từ chối**; ví hạn mức 500.000đ. Chọn Ví → bấm "Đặt đơn & lấy mã QR" → màn hình hiện mã QR minh họa riêng của đơn (mã đơn + số tiền) → bấm "Tôi đã quét mã & thanh toán".
+Đăng nhập bằng tài khoản quầy sẽ vào thẳng màn hình Quầy; tài khoản quản lý vào thẳng trang Quản lý.
 
 > ⚠️ Free tier Render "ngủ" sau 15 phút – request đầu tiên có thể mất 30–60 s.
 

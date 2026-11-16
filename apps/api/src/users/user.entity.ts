@@ -32,6 +32,10 @@ export class User {
   @Column({ name: 'loyalty_points', type: 'int', default: 0 })
   loyaltyPoints: number;
 
+  /** Tài khoản bị quản lý khóa thì không đăng nhập / gọi API được (FR-18) */
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
   @OneToMany(() => Order, (order) => order.user)
   orders: Order[];
 

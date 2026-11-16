@@ -9,6 +9,7 @@ import { OrderItem } from '../orders/order-item.entity';
 import { Payment } from '../payments/payment.entity';
 import { Promotion } from '../promotions/promotion.entity';
 import { LoyaltyTransaction } from '../loyalty/loyalty-transaction.entity';
+import { ProductImage } from '../products/product-image.entity';
 
 export const ENTITIES = [
   User,
@@ -20,6 +21,7 @@ export const ENTITIES = [
   Payment,
   Promotion,
   LoyaltyTransaction,
+  ProductImage,
 ];
 
 const isTs = __filename.endsWith('.ts');

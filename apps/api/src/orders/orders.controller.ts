@@ -26,18 +26,21 @@ export class OrdersController {
   constructor(private readonly service: OrdersService) {}
 
   @Post()
+  @Roles(UserRole.CUSTOMER)
   @ApiOperation({ summary: 'FR-06 Tạo đơn hàng từ giỏ (server tính lại giá, trừ tồn kho)' })
   create(@CurrentUser() user: JwtPayload, @Body() dto: CreateOrderDto) {
     return this.service.create(user.sub, dto);
   }
 
   @Get()
+  @Roles(UserRole.CUSTOMER)
   @ApiOperation({ summary: 'FR-11 Lịch sử đơn của tôi' })
   findMine(@CurrentUser() user: JwtPayload) {
     return this.service.findMine(user.sub);
   }
 
   @Get('me')
+  @Roles(UserRole.CUSTOMER)
   @ApiOperation({ summary: 'FR-11 Lịch sử đơn của tôi (endpoint GET /orders/me theo đề bài)' })
   findMineAlias(@CurrentUser() user: JwtPayload) {
     return this.service.findMine(user.sub);
@@ -76,6 +79,7 @@ export class OrdersController {
   }
 
   @Post(':id/cancel')
+  @Roles(UserRole.CUSTOMER)
   @ApiOperation({ summary: 'FR-12 Hủy đơn chưa thanh toán (hoàn tồn kho)' })
   cancel(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

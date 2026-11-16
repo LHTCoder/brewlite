@@ -5,19 +5,28 @@ import { useCart } from '@/store/cart';
 import { useAuth } from '@/store/auth';
 import { cartCount } from '@/lib/pricing';
 
-const items = [
-  { href: '/', label: 'Menu', icon: MenuIcon },
-  { href: '/cart', label: 'Giỏ hàng', icon: CartIcon },
-  { href: '/orders', label: 'Đơn hàng', icon: OrdersIcon },
-  { href: '/account', label: 'Tài khoản', icon: UserIcon },
-];
+type NavItem = { href: string; label: string; icon: (p: { className?: string }) => JSX.Element };
+
+const MENU: NavItem = { href: '/', label: 'Menu', icon: MenuIcon };
+const CART: NavItem = { href: '/cart', label: 'Giỏ hàng', icon: CartIcon };
+const ORDERS: NavItem = { href: '/orders', label: 'Đơn hàng', icon: OrdersIcon };
+const STAFF: NavItem = { href: '/staff', label: 'Quầy', icon: StaffIcon };
+const MANAGE: NavItem = { href: '/manage', label: 'Quản lý', icon: ManageIcon };
+const ACCOUNT: NavItem = { href: '/account', label: 'Tài khoản', icon: UserIcon };
+
+/** Thanh điều hướng theo vai trò (FR-19): chỉ khách mới có Menu / Giỏ hàng / Đơn hàng */
+export function navItemsFor(role: string | undefined): NavItem[] {
+  if (role === 'STAFF') return [STAFF, ACCOUNT];
+  if (role === 'MANAGER') return [MANAGE, STAFF, ACCOUNT];
+  return [MENU, CART, ORDERS, ACCOUNT];
+}
 
 export function BottomNav() {
   const pathname = usePathname();
   const count = useCart((s) => cartCount(s.lines));
   const role = useAuth((s) => s.user?.role);
 
-  const navItems = role && role !== 'CUSTOMER' ? [...items.slice(0, 3), { href: '/staff', label: 'Quầy', icon: StaffIcon }, items[3]] : items;
+  const navItems = navItemsFor(role);
 
   return (
     <nav
@@ -95,6 +104,16 @@ function StaffIcon({ className }: { className?: string }) {
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
       <path d="M3 10h18v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <path d="M7 10V6a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+function ManageIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="18" cy="18" r="2" />
     </svg>
   );
 }

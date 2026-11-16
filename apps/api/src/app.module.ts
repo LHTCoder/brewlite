@@ -9,6 +9,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PromotionsModule } from './promotions/promotions.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
+import { AdminModule } from './admin/admin.module';
 import { HealthController } from './health/health.controller';
 import { RequestLoggerMiddleware } from './common/request-logger.middleware';
 import { MiddlewareConsumer, NestModule } from '@nestjs/common';
@@ -27,6 +28,7 @@ import { MiddlewareConsumer, NestModule } from '@nestjs/common';
     PaymentsModule,
     PromotionsModule,
     LoyaltyModule,
+    AdminModule,
   ],
   controllers: [HealthController],
 })

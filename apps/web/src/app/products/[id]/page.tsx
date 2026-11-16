@@ -1,7 +1,7 @@
 'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { api, ApiRequestError } from '@/lib/api';
+import { api, ApiRequestError, imageSrc } from '@/lib/api';
 import type { Product, ProductSize, Topping } from '@/lib/types';
 import { formatVND, lineUnitPrice } from '@/lib/pricing';
 import { useCart } from '@/store/cart';
@@ -79,7 +79,7 @@ export default function ProductDetailPage() {
       <Header title={product.name} back="/" />
       <div className="px-4 pb-32">
         <img
-          src={product.imageUrl ?? '/images/placeholder.svg'}
+          src={imageSrc(product.imageUrl)}
           alt={product.name}
           className="aspect-[4/3] w-full rounded-2xl bg-brew-50 object-cover"
         />

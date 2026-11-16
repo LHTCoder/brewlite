@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Product } from '@/lib/types';
 import { formatVND } from '@/lib/pricing';
+import { imageSrc } from '@/lib/api';
 
 export function ProductCard({ product }: { product: Product }) {
   const soldOut = product.stock <= 0;
@@ -13,7 +14,7 @@ export function ProductCard({ product }: { product: Product }) {
     >
       <div className="relative aspect-square overflow-hidden rounded-xl bg-brew-50">
         <img
-          src={product.imageUrl ?? '/images/placeholder.svg'}
+          src={imageSrc(product.imageUrl)}
           alt={product.name}
           loading="lazy"
           className={`h-full w-full object-cover ${soldOut ? 'opacity-40 grayscale' : ''}`}

@@ -8,14 +8,14 @@ Quy ước mã:
 
 | Mã yêu cầu | Use-case / User Story | Thiết kế / Sơ đồ | Code / API | Test |
 |---|---|---|---|---|
-| FR-01 Xem menu | UC-1 · US-01 "Là khách, tôi muốn xem menu theo danh mục để chọn món" | UC-OV, Activity-02, Class-01 (Product, ProductCategory) | `GET /products` – `products.controller.ts`, `products.service.ts`; `apps/web/src/app/page.tsx`, `ProductCard.tsx`, `States.tsx` | API-T01/T02 (`products.service.spec.ts`), INT-T01 (`products.e2e-spec.ts`), WEB-T03 (`ProductCard.test.tsx`), E2E-T03 |
+| FR-01 Xem menu | UC-1 · US-01 "Là khách, tôi muốn xem menu theo danh mục để chọn món" | UC-OV, Activity-02, Class-01 (Product, ProductCategory) | `GET /products` – `products.controller.ts`, `products.service.ts`; `apps/web/src/app/page.tsx`, `ProductCard.tsx`, `States.tsx`; ảnh chụp sản phẩm `public/images/*.jpg` (migration `RealMenuPhotos`) | API-T01/T02 (`products.service.spec.ts`), INT-T01 (`products.e2e-spec.ts`), WEB-T03 (`ProductCard.test.tsx`), E2E-T03 |
 | FR-02 Chi tiết sản phẩm | UC-3 · US-02 "…xem size, topping, tồn kho" | Activity-02, Class-01 (ProductSize, Topping) | `GET /products/:id`; `apps/web/src/app/products/[id]/page.tsx` | API-T02, INT-T01 (404/400), E2E-T01 bước 2 |
 | FR-03 Giỏ hàng & tổng tiền | UC-4 · US-03 | Activity-03, ADR-008 | `apps/web/src/store/cart.ts`, `lib/pricing.ts`, `app/cart/page.tsx` | WEB-T01 (`pricing.test.ts`), WEB-T02 (`cart.test.ts`), E2E-T01 bước 3 |
 | FR-04 Đăng ký / đăng nhập / JWT | UC-2, UC-5 · US-04 | Activity-04, Sequence-02, ADR-003, Class-01 (User, UserRole) | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` – `auth.service.ts`, `jwt-auth.guard.ts`; `AuthForm.tsx` | API-T03 (`auth.service.spec.ts`), INT-T03, INT-T04, E2E-T01 bước 4, E2E-T04 |
 | FR-05 Kiểm tra tồn kho | UC-10 bước 4.2, E1 · US-05 | Activity-01 (nhánh hết hàng), Sequence-01 (FOR UPDATE) | `OrdersService.create` (`setLock('pessimistic_write')`) | INT-T06, E2E-T03 (nhãn hết hàng) |
 | FR-06 Tạo đơn hàng | UC-10 bước 4.1–4.2 · US-06 | Sequence-01, Class-01 (Order, OrderItem), State-01 | `POST /orders` – `orders.controller.ts`, `orders.service.ts`, `pricing.ts`, `create-order.dto.ts` | UNIT-T01/T02 (`pricing.spec.ts`), INT-T05, INT-T07, INT-T15 (đồng thời), E2E-T01 |
 | FR-07 Khuyến mãi | UC-10 bước 2, A2 · US-07 | Activity-01, Class-01 (Promotion, PromotionType) | `GET /promotions/:code` – `promotions.module.ts`; `applyPromotion` | UNIT-T03, INT-T05 (discount), INT-T07 (mã sai), E2E-T01 bước 5 |
-| FR-08 Thanh toán Ví/Thẻ mô phỏng | UC-10 bước 4.3–4.5, A3, E8 · US-08 | Sequence-01 (alt thành công/thất bại), ADR-005, Class-01 (Payment, PaymentMethod, PaymentStatus) | `POST /payments` – `payments.service.ts`, `payment-gateway.service.ts`; `app/checkout/page.tsx` | UNIT-T07 (`payment-gateway.service.spec.ts`), UNIT-T09 (timeout 503), INT-T08, INT-T09, INT-T14, E2E-T01, E2E-T02 |
+| FR-08 Thanh toán Ví (mã QR riêng từng đơn) / Thẻ mô phỏng | UC-10 bước 4.3–4.5, A3, E8 · US-08 | Sequence-01 (alt thành công/thất bại, bước hiện QR), Activity-01, ADR-005, Class-01 (Payment, PaymentMethod, PaymentStatus) | `POST /payments` – `payments.service.ts`, `payment-gateway.service.ts`; `app/checkout/page.tsx`, `components/PaymentQr.tsx` (`qrPayload`) | UNIT-T07 (`payment-gateway.service.spec.ts`), UNIT-T09 (timeout 503), INT-T08, INT-T09, INT-T14, WEB-T04 (QR khác nhau theo đơn), E2E-T01 bước 5b (QR), E2E-T02 |
 | FR-09 Idempotency thanh toán | UC-10 A4 · US-09 | Sequence-01 (nhánh key trùng), ADR-006 | `payments.service.ts` (lookup `idempotencyKey`), migration unique index `IDX_payments_idempotency` | INT-T09 (replay cùng key → 1 bản ghi), INT-T16 (khóa qua header) |
 | FR-10 Xác nhận & theo dõi trạng thái | UC-7 · US-10 | Activity-05, Sequence-03, State-01 | `GET /orders/:id`; `app/orders/[id]/page.tsx`, `StatusBadge.tsx` | INT-T09 (status PAID), E2E-T01 bước 6 |
 | FR-11 Lịch sử đơn | UC-6 · US-11 | Class-01 (User 1–* Order) | `GET /orders` – `OrdersService.findMine`; `app/orders/page.tsx` | INT-T11, E2E-T01 bước 7 |
@@ -23,7 +23,9 @@ Quy ước mã:
 | FR-13 Quản lý trạng thái đơn (quầy) | UC-11, UC-12 · US-13 | Activity-05, Sequence-03, State-01, Class-01 (OrderStatus) | `GET /orders/staff/all`, `PATCH /orders/:id/status` – `@Roles`, `ORDER_TRANSITIONS`, `STAFF_SETTABLE_STATUSES`; `app/staff/page.tsx` | UNIT-T06, UNIT-T08 (`orders.service.spec.ts`), INT-T10 (403/400/200), INT-T13 (không PATCH được sang PAID/CANCELLED), INT-T16 (`?status=` sai → 400) |
 | FR-14 Điểm thưởng | UC-9, UC-10 bước 4.5 · US-14 | Class-01 (LoyaltyTransaction), Sequence-01 bước 43–44 | `PaymentsService.pay` (EARN), `GET /loyalty/transactions`; `app/account/page.tsx` | UNIT-T04 (`loyaltyPointsFor`), INT-T09 (điểm), E2E-T01 bước 7 |
 | FR-15 Đổi điểm (Could) | — | Class-01 (REDEEM) | chưa hiện thực | — (AC-15.1/15.2 dành cho Sprint sau) |
-| FR-16 Quản trị menu (Could) | UC-13 | — | seed/SQL | — |
+| FR-16 Quản trị menu (Should, v1.1) | UC-13 | UC-OV, Class-01 (Product, ProductImage) | `GET/POST /admin/products`, `PATCH /admin/products/:id`, `PUT /admin/products/:id/image`, `GET /media/products/:id` – `admin/admin.service.ts`, `admin.controller.ts`; migration `AdminAndMedia`; `app/manage/page.tsx` (tab Menu) | INT-T18 (403 với khách/quầy, sửa giá/tồn, ẩn/hiện), INT-T19 (thêm món, đổi ảnh, ảnh sai định dạng → 400), E2E-T05 |
+| FR-18 Quản lý tài khoản nhân viên (Should, v1.1) | UC-14 | UC-OV, Class-01 (User.isActive) | `GET/POST /admin/users`, `PATCH /admin/users/:id/status`, `POST /admin/users/:id/reset-password`; `JwtAuthGuard` đọc `isActive`; `AuthService.login` chặn tài khoản khóa; `app/manage/page.tsx` (tab Nhân viên) | API-T04 (`auth.service.spec.ts` – đăng nhập tài khoản khóa → 403), INT-T20, E2E-T05 |
+| FR-19 Phân quyền 3 vai trò (Must, v1.1) | UC-OV (quầy/quản lý không có use-case mua hàng) | UC-OV, Sequence-02 | `@Roles(UserRole.CUSTOMER)` trên `POST /orders`, `GET /orders`, `GET /orders/me`, `POST /orders/:id/cancel`, `POST /payments`; `JwtAuthGuard` lấy vai trò từ DB; web: `AppShell.isShoppingPath`, `BottomNav.navItemsFor`, `homeFor` | INT-T13 (quầy hủy đơn → 403), INT-T17, WEB-T04 (`roles.test.ts`), E2E-T05 |
 
 ## 2. Yêu cầu phi chức năng
 
@@ -44,14 +46,16 @@ Quy ước mã:
 | Test | File | Yêu cầu |
 |---|---|---|
 | API-T01, API-T02 | `apps/api/src/products/products.service.spec.ts` | FR-01, FR-02 |
-| API-T03 | `apps/api/src/auth/auth.service.spec.ts` | FR-04, NFR-02 |
+| API-T03, API-T04 | `apps/api/src/auth/auth.service.spec.ts` | FR-04, FR-18, NFR-02 |
 | UNIT-T01…T05 | `apps/api/src/orders/pricing.spec.ts` | FR-06, FR-07, FR-14 |
 | UNIT-T06, UNIT-T08 | `apps/api/src/orders/orders.service.spec.ts` | FR-12, FR-13 |
 | UNIT-T07 | `apps/api/src/payments/payment-gateway.service.spec.ts` | FR-08 |
 | UNIT-T09 | `apps/api/src/payments/payments.service.spec.ts` | FR-08 (E8 timeout) |
 | INT-T01, INT-T02 | `apps/api/test/products.e2e-spec.ts` | FR-01, FR-02, NFR-05 |
-| INT-T03…T16 | `apps/api/test/checkout.e2e-spec.ts` | FR-04…FR-14, NFR-02, NFR-04 |
+| INT-T03…T16 | `apps/api/test/checkout.e2e-spec.ts` | FR-04…FR-14, FR-19 (INT-T13), NFR-02, NFR-04 |
+| INT-T17…T20 | `apps/api/test/admin.e2e-spec.ts` | FR-16, FR-18, FR-19 |
 | WEB-T01, WEB-T02 | `apps/web/src/lib/pricing.test.ts`, `apps/web/src/store/cart.test.ts` | FR-03 |
 | WEB-T03 | `apps/web/src/components/ProductCard.test.tsx` | FR-01, NFR-03 |
-| E2E-T01…T04 | `tests/e2e/checkout.spec.ts` | Luồng end-to-end FR-01…FR-14, NFR-02 |
+| WEB-T04 | `apps/web/src/lib/roles.test.ts` | FR-08 (QR), FR-16 (ảnh `/media`), FR-19 |
+| E2E-T01…T05 | `tests/e2e/checkout.spec.ts` | Luồng end-to-end FR-01…FR-14 (thanh toán Ví qua mã QR), FR-16, FR-18, FR-19, NFR-02 |
 | CI-01, CI-02 | `.github/workflows/ci.yml`, `cd.yml` | NFR-05 |
